@@ -4,8 +4,10 @@ import userStyles from '../styles/User.module.css';
 import User from '../components/User';
 import { useRef, useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import SockJS from "sockjs-client";
+import Stomp from "stompjs";
 
-const ICON_NUMBERS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80];
+const ICON_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
 const DEFAULT_USERS = [
   { name: 'Player 1', iconNumber: 1 },
   { name: 'Player 2', iconNumber: 2 },
@@ -43,12 +45,13 @@ const shuffleArray = (arrayInput) => {
 export default function Home() {
   const context = useRef();
   const isUnmounted = useRef();
+  const stomp = useRef();
   const dest = useRef(-1);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showColorsModal, setShowColorsModal] = useState(false);
-  const [users, setUsers] = useState(DEFAULT_USERS);
+  // const [users, setUsers] = useState(DEFAULT_USERS);
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [randomNumber, setRandomNumber] = useState(1);
@@ -56,10 +59,18 @@ export default function Home() {
   const [currentActive, setCurrentActive] = useState(-1);
   const [currentImage, setCurrentImage] = useState(-1);
   const [stamps, setStamps] = useState([]);
+  const [gameState, setGameState] = useState({ players: [] });
+  const [stompConnected, setStompConnected] = useState(false);
+  const [myUser, setMyUser] = useState({ name: undefined });
 
   const onUserRemove = (name) => {
-    setUsers(users.filter(user => user.name !== name));
-    setCurrentActive(-1);
+    setGameState((prev) => {
+      setMyUser({ name: undefined });
+      const newState = { ...prev, players: gameState.players.filter(user => user.name !== name) };
+      syncState(newState);
+      return newState;
+    });
+    setActiveUserIndex(-1);
   };
 
   const onKeyDown = (event) => {
@@ -75,30 +86,53 @@ export default function Home() {
       return;
     }
 
-    if (users.some(user => user.name === username)) {
+    if (gameState.players.some(user => user.name === username)) {
       setError('Duplicated Name! Please try another one');
       return;
     }
 
     setShowUserModal(false);
-    setUsers([
-      ...users,
-      {
-        name: username,
-        iconNumber: randomNumber,
-      },
-    ]);
+    const myUser = {
+      name: username,
+      iconNumber: randomNumber,
+    };
+    const players = [...gameState.players, myUser]
+    setMyUser(myUser);
+    setGameState((prev) => {
+      const newState = { ...prev, players };
+      syncState(newState);
+      return newState;
+    });
     setUsername('');
-    setCurrentActive(-1);
+    setActiveUserIndex(-1);
   };
+
+  const syncState = (state) => {
+    if (myUser && myUser.name) {
+      state.owner = myUser.name;
+    }
+    stomp.current.send("/app/update-state", {}, JSON.stringify(state));
+  }
+
+  const setActiveUserIndex = (index) => {
+    setCurrentActive(index);
+    setGameState((prev) => {
+      const newState = { ...prev, activePlayer: gameState.players[index] };
+      syncState(newState);
+      return newState;
+    });
+  }
 
   const onUsernameChange = (event) => {
     setUsername(event.target.value);
   };
 
   const onShuffleBtnClick = () => {
-    setUsers(shuffleArray(users));
-    setCurrentActive(-1);
+    setGameState((prev) => {
+      const newState = { ...prev, players: shuffleArray(gameState.players) };
+      return newState;
+    });
+    setActiveUserIndex(-1);
   };
 
   const onStartBtnClick = () => {
@@ -107,8 +141,8 @@ export default function Home() {
       return;
     }
 
-    dest.current = getRandomInt(users.length * 4, users.length * 5);
-    setCurrentActive(0);
+    dest.current = getRandomInt(gameState.players.length * 4, gameState.players.length * 5);
+    setActiveUserIndex(0);
   };
 
   const onUserModalClose = () => {
@@ -132,7 +166,7 @@ export default function Home() {
     const radius = 25;
     const x = event.clientX - radius;
     const y = event.clientY - radius;
-    setStamps([ ...stamps, { x, y } ]);
+    setStamps([...stamps, { x, y }]);
   };
 
   const onHelpModalClose = () => {
@@ -169,36 +203,67 @@ export default function Home() {
     const factor = currentActive / dest.current;
     const delayTime = 300 * timingFunc(factor);
     await delay(delayTime);
-    
-    setCurrentActive(currentActive + 1);
+
+    setActiveUserIndex(currentActive + 1);
 
     return () => {
       isUnmounted.current = true;
     };
-  }, [currentActive]);
+  }, [gameState]);
 
   useEffect(() => {
-    const userNumbers = users.map(user => user.iconNumber);
+    const userNumbers = gameState.players.map(user => user.iconNumber);
     const numbers = ICON_NUMBERS.filter(number => !userNumbers.includes(number));
     const random = getRandomInt(0, numbers.length - 1);
     setRandomNumber(numbers[random]);
-    const usersJson = JSON.stringify(users);
-    if (usersJson !== JSON.stringify(DEFAULT_USERS)) {
-      localStorage.setItem('savedUsers', usersJson);
-    }
-  }, [users]);
+    // const usersJson = JSON.stringify(users);
+    // if (usersJson !== JSON.stringify(DEFAULT_USERS)) {
+    //   localStorage.setItem('savedUsers', usersJson);
+    // }
+  }, [gameState]);
 
   useEffect(() => {
-    const savedUsers = JSON.parse(localStorage.getItem('savedUsers'));
-    if (savedUsers && savedUsers.length > 0) {
-      setUsers(savedUsers);
-    }
-
+    // const savedUsers = JSON.parse(localStorage.getItem('savedUsers'));
+    // if (savedUsers && savedUsers.length > 0) {
+    //   setGameState({ players: savedUsers })
+    //   console.log(gameState);
+    // }
     const AudioContext = window.AudioContext || window.webkitAudioContext || false;
     if (AudioContext) {
       context.current = new AudioContext();
     }
+
+  }, [gameState]);
+
+  useEffect(() => {
+    const sock = new SockJS("https://drink-sync.azurewebsites.net/ws");
+    stomp.current = Stomp.over(sock);
+    // this.stomp.debug = () => { };
+    stomp.current.connect({
+    }, (event) => {
+      if (!stompConnected) {
+        stomp.current.subscribe("/topic/state", (state) => {
+          const syncState = JSON.parse(state.body);
+          if (myUser.name && syncState.owner !== myUser.name) {
+            setGameState(syncState);
+          } else if (!myUser.name) {
+            setGameState(syncState);
+          }
+          setStompConnected(true);
+        });
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    fetch("https://drink-sync.azurewebsites.net/state")
+      .then(response => response.json())
+      .then(data => {
+        if (data.players) {
+          setGameState(data);
+        }
+      });
+  }, [])
 
   const playSound = (type = 'triangle', frequency = 260.0, time = 1) => {
     if (!context.current) {
@@ -216,7 +281,9 @@ export default function Home() {
     g.gain.exponentialRampToValueAtTime(0.00001, context.current.currentTime + time);
   };
 
-  const currentActiveUser = users[currentActive % users.length] || {};
+  // TODO:
+  // const currentActiveUser = gameState.players[currentActive % gameState.players.length] || {};
+  const currentActiveUser = { name: "test" };
 
   return (
     <div className={styles.container}>
@@ -236,25 +303,35 @@ export default function Home() {
           />
         </div>
         <div className={styles.content}>
-          {users.map((user, idx) =>
+          {gameState.players && gameState.players.map((user, idx) =>
             <User
               key={`${user.name}-${user.iconNumber}`}
               name={user.name}
               iconNumber={user.iconNumber}
               onRemove={onUserRemove}
-              isActive={idx === currentActive % users.length}
+              isActive={idx === currentActive % gameState.players.length}
               isStopped={currentActive === dest.current}
             />
           )}
-          <div className={`${userStyles.user} ${userStyles.addUserBtn}`} role="presentation" onClick={() => setShowUserModal(true)}>
-            <img className={userStyles.userImg} src="/add-user.svg" />
+          {!myUser.name &&
+            <div className={`${userStyles.user} ${userStyles.addUserBtn}`} role="presentation" onClick={() => setShowUserModal(true)}>
+              <img className={userStyles.userImg} src="/add-user.svg" />
+            </div>
+          }
+        </div>
+        {gameState.players &&
+          <div className={styles.btnsWrapper}>
+            <button className={styles.btnShuffle} onClick={onShuffleBtnClick} style={{ pointerEvents: gameState.players.length > 0 ? 'auto' : 'none' }}>Shuffle</button>
+            <button className={styles.btnStart} onClick={onStartBtnClick} style={{ pointerEvents: gameState.players.length > 0 ? 'auto' : 'none' }}>Start</button>
+            <button className={styles.btnClear} onClick={() => {
+              setGameState((prev) => {
+                const newState = { ...prev, players: [] };
+                syncState(newState);
+                return newState;
+              });
+            }}>Clear</button>
           </div>
-        </div>
-        <div className={styles.btnsWrapper}>
-          <button className={styles.btnShuffle} onClick={onShuffleBtnClick} style={{ pointerEvents: users.length > 0 ? 'auto' : 'none' }}>Shuffle</button>
-          <button className={styles.btnStart} onClick={onStartBtnClick} style={{ pointerEvents: users.length > 0 ? 'auto' : 'none' }}>Start</button>
-          <button className={styles.btnClear} onClick={() => setUsers([])}>Clear</button>
-        </div>
+        }
       </main>
 
       <img className={styles.imageGenerate} src="/image.svg" role="presentation" onClick={() => onImageBtnClick()} />
@@ -299,7 +376,7 @@ export default function Home() {
       <footer className={styles.footer}>
         <div className={styles.sounds}>
           <p>Sound: </p>
-          <div onChange={(event) => setSound(event.target.value) }>
+          <div onChange={(event) => setSound(event.target.value)}>
             <input type="radio" value="none" name="sound" id="sound-none" />
             <label htmlFor="sound-none">none</label>
             <input type="radio" value="triangle" name="sound" defaultChecked id="sound-triangle" />
