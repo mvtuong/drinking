@@ -51,26 +51,26 @@ export default function Home() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showColorsModal, setShowColorsModal] = useState(false);
-  // const [users, setUsers] = useState(DEFAULT_USERS);
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [randomNumber, setRandomNumber] = useState(1);
   const [sound, setSound] = useState('triangle');
-  const [currentActive, setCurrentActive] = useState(-1);
   const [currentImage, setCurrentImage] = useState(-1);
   const [stamps, setStamps] = useState([]);
-  const [gameState, setGameState] = useState({ players: [] });
-  const [stompConnected, setStompConnected] = useState(false);
+  const [gameState, setGameState] = useState({ players: [], activePlayerIndex: -1 });
   const [myUser, setMyUser] = useState({ name: undefined });
 
   const onUserRemove = (name) => {
     setGameState((prev) => {
       setMyUser({ name: undefined });
-      const newState = { ...prev, players: gameState.players.filter(user => user.name !== name) };
+      const newState = {
+        ...prev,
+        activePlayerIndex: -1,
+        players: gameState.players.filter(user => user.name !== name)
+      };
       syncState(newState);
       return newState;
     });
-    setActiveUserIndex(-1);
   };
 
   const onKeyDown = (event) => {
@@ -98,29 +98,26 @@ export default function Home() {
     };
     const players = [...gameState.players, myUser]
     setMyUser(myUser);
+    // localStorage.setItem("myUser", JSON.stringify(myUser));
     setGameState((prev) => {
-      const newState = { ...prev, players };
+      const newState = {
+        ...prev,
+        players,
+        activePlayerIndex: -1
+      };
       syncState(newState);
       return newState;
     });
     setUsername('');
-    setActiveUserIndex(-1);
   };
 
   const syncState = (state) => {
     if (myUser && myUser.name) {
       state.owner = myUser.name;
     }
-    stomp.current.send("/app/update-state", {}, JSON.stringify(state));
-  }
-
-  const setActiveUserIndex = (index) => {
-    setCurrentActive(index);
-    setGameState((prev) => {
-      const newState = { ...prev, activePlayer: gameState.players[index] };
-      syncState(newState);
-      return newState;
-    });
+    if (stomp.current.connected) {
+      stomp.current.send("/app/update-state", {}, JSON.stringify(state));
+    }
   }
 
   const onUsernameChange = (event) => {
@@ -129,10 +126,14 @@ export default function Home() {
 
   const onShuffleBtnClick = () => {
     setGameState((prev) => {
-      const newState = { ...prev, players: shuffleArray(gameState.players) };
+      const newState = {
+        ...prev,
+        players: shuffleArray(gameState.players),
+        activePlayerIndex: -1
+      };
+      syncState(newState);
       return newState;
     });
-    setActiveUserIndex(-1);
   };
 
   const onStartBtnClick = () => {
@@ -142,7 +143,26 @@ export default function Home() {
     }
 
     dest.current = getRandomInt(gameState.players.length * 4, gameState.players.length * 5);
-    setActiveUserIndex(0);
+    setGameState((prev) => {
+      const newState = {
+        ...prev,
+        activePlayerIndex: 0
+      };
+      return newState;
+    });
+  };
+
+  const onClearBtnClick = () => {
+    setGameState((prev) => {
+      const newState = { ...prev, players: [] };
+      syncState(newState);
+      return newState;
+    });
+    // Clear state server side
+    setMyUser({ name: undefined });
+    fetch("https://drink-sync.azurewebsites.net/state", {
+      method: "DELETE"
+    }).then((response) => console.log(response));
   };
 
   const onUserModalClose = () => {
@@ -178,11 +198,11 @@ export default function Home() {
   }
 
   useEffect(async () => {
-    if (isUnmounted.current || currentActive < 0 || dest.current === -1) {
+    if (isUnmounted.current || gameState.activePlayerIndex < 0 || dest.current === -1) {
       return;
     }
 
-    if (currentActive === dest.current) {
+    if (gameState.activePlayerIndex === dest.current) {
       if (sound !== 'none') {
         playSound(sound, 174.6);
         await delay(500);
@@ -193,6 +213,7 @@ export default function Home() {
         playSound(sound, 840.0, 3);
       }
       dest.current = -1;
+      syncState(gameState);
       return;
     }
 
@@ -200,40 +221,49 @@ export default function Home() {
       playSound(sound);
     }
 
-    const factor = currentActive / dest.current;
+    const factor = gameState.activePlayerInde / dest.current;
     const delayTime = 300 * timingFunc(factor);
     await delay(delayTime);
 
-    setActiveUserIndex(currentActive + 1);
+    setGameState((prev) => {
+      const newState = {
+        ...prev,
+        activePlayerIndex: gameState.activePlayerIndex + 1
+      };
+      return newState;
+    });
 
     return () => {
       isUnmounted.current = true;
     };
-  }, [gameState]);
+  }, [gameState.activePlayerIndex]);
 
   useEffect(() => {
     const userNumbers = gameState.players.map(user => user.iconNumber);
     const numbers = ICON_NUMBERS.filter(number => !userNumbers.includes(number));
     const random = getRandomInt(0, numbers.length - 1);
     setRandomNumber(numbers[random]);
-    // const usersJson = JSON.stringify(users);
-    // if (usersJson !== JSON.stringify(DEFAULT_USERS)) {
-    //   localStorage.setItem('savedUsers', usersJson);
-    // }
-  }, [gameState]);
+  }, [gameState.players]);
 
   useEffect(() => {
-    // const savedUsers = JSON.parse(localStorage.getItem('savedUsers'));
-    // if (savedUsers && savedUsers.length > 0) {
-    //   setGameState({ players: savedUsers })
-    //   console.log(gameState);
+
+    // const savedUser = localStorage.getItem("myUser");
+    // if (savedUser) {
+    //   setMyUser(JSON.parse(savedUser));
+    //   const players = [...gameState.players, savedUser];
+    //   setGameState((prev) => {
+    //     const newState = {
+    //       ...prev,
+    //       players
+    //     };
+    //     return newState;
+    //   });
     // }
     const AudioContext = window.AudioContext || window.webkitAudioContext || false;
     if (AudioContext) {
       context.current = new AudioContext();
     }
-
-  }, [gameState]);
+  }, []);
 
   useEffect(() => {
     const sock = new SockJS("https://drink-sync.azurewebsites.net/ws");
@@ -241,22 +271,21 @@ export default function Home() {
     // this.stomp.debug = () => { };
     stomp.current.connect({
     }, (event) => {
-      if (!stompConnected) {
-        stomp.current.subscribe("/topic/state", (state) => {
-          const syncState = JSON.parse(state.body);
-          if (myUser.name && syncState.owner !== myUser.name) {
-            setGameState(syncState);
-          } else if (!myUser.name) {
-            setGameState(syncState);
-          }
-          setStompConnected(true);
-        });
-      }
+      stomp.current.subscribe("/topic/state", (state) => {
+        const syncState = JSON.parse(state.body);
+        if (myUser.name && syncState.owner !== myUser.name) {
+          setGameState(syncState);
+        } else if (!myUser.name) {
+          setGameState(syncState);
+        }
+      });
     });
   }, []);
 
   useEffect(() => {
-    fetch("https://drink-sync.azurewebsites.net/state")
+    fetch("https://drink-sync.azurewebsites.net/state", {
+      headers: { 'content-type': 'application/json' }
+    })
       .then(response => response.json())
       .then(data => {
         if (data.players) {
@@ -281,9 +310,7 @@ export default function Home() {
     g.gain.exponentialRampToValueAtTime(0.00001, context.current.currentTime + time);
   };
 
-  // TODO:
-  // const currentActiveUser = gameState.players[currentActive % gameState.players.length] || {};
-  const currentActiveUser = { name: "test" };
+  const currentActiveUser = gameState.players[gameState.activePlayerIndex % gameState.players.length] || {};
 
   return (
     <div className={styles.container}>
@@ -299,7 +326,7 @@ export default function Home() {
             name={currentActiveUser.name}
             iconNumber={currentActiveUser.iconNumber}
             isActive={true}
-            isStopped={currentActive === dest.current}
+            isStopped={gameState.activePlayerIndex === dest.current}
           />
         </div>
         <div className={styles.content}>
@@ -309,8 +336,8 @@ export default function Home() {
               name={user.name}
               iconNumber={user.iconNumber}
               onRemove={onUserRemove}
-              isActive={idx === currentActive % gameState.players.length}
-              isStopped={currentActive === dest.current}
+              isActive={idx === gameState.activePlayerIndex % gameState.players.length}
+              isStopped={gameState.activePlayerIndex === dest.current}
             />
           )}
           {!myUser.name &&
@@ -323,13 +350,7 @@ export default function Home() {
           <div className={styles.btnsWrapper}>
             <button className={styles.btnShuffle} onClick={onShuffleBtnClick} style={{ pointerEvents: gameState.players.length > 0 ? 'auto' : 'none' }}>Shuffle</button>
             <button className={styles.btnStart} onClick={onStartBtnClick} style={{ pointerEvents: gameState.players.length > 0 ? 'auto' : 'none' }}>Start</button>
-            <button className={styles.btnClear} onClick={() => {
-              setGameState((prev) => {
-                const newState = { ...prev, players: [] };
-                syncState(newState);
-                return newState;
-              });
-            }}>Clear</button>
+            <button className={styles.btnClear} onClick={onClearBtnClick}>Clear</button>
           </div>
         }
       </main>
