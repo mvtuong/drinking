@@ -59,6 +59,7 @@ export default function Home() {
   const [stamps, setStamps] = useState([]);
   const [gameState, setGameState] = useState({ players: [], activePlayerIndex: -1 });
   const [myUser, setMyUser] = useState({ name: undefined });
+  const [isController, setIsController] = useState(false);
 
   const onUserRemove = (name) => {
     setGameState((prev) => {
@@ -221,7 +222,7 @@ export default function Home() {
       playSound(sound);
     }
 
-    const factor = gameState.activePlayerInde / dest.current;
+    const factor = gameState.activePlayerIndex / dest.current;
     const delayTime = 300 * timingFunc(factor);
     await delay(delayTime);
 
@@ -291,6 +292,11 @@ export default function Home() {
   const onStompFail = (message) => {
     console.log("Stomp connection failed. Retrying...")
     setTimeout(stompConnect, 5000);
+  }
+
+  const handleCheckboxChange = (event) => {
+    const { checked } = event.target;
+    setIsController(checked);
   }
 
   useEffect(() => {
@@ -367,6 +373,15 @@ export default function Home() {
       </main>
 
       <img className={styles.imageGenerate} src="/image.svg" role="presentation" onClick={() => onImageBtnClick()} />
+      <label className={styles.controller}>
+        <input
+          name="isController"
+          type="checkbox"
+          checked={isController}
+          onChange={handleCheckboxChange}
+        />
+        Controller
+      </label>
       <img className={styles.helpCenter} src="/question.svg" role="presentation" onClick={() => setShowHelpModal(true)} />
       <img className={styles.colorTable} src="/chromatic.svg" role="presentation" onClick={() => setShowColorsModal(true)} />
 

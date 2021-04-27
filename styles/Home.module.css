@@ -17,6 +17,7 @@
 }
 
 .title {
+  padding: 0 30px;
   align-self: center;
   text-align: center;
 }
@@ -102,6 +103,22 @@
   width: 30px;
   height: 30px;
   cursor: pointer;
+}
+
+.controller {
+  position: absolute;
+  top: 40px;
+  left: 5px;
+  width: 25px;
+  height: 25px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.controller input {
+  margin: 0;
+  width: 25px;
+  height: 25px;
 }
 
 .helpCenter {
