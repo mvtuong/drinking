@@ -160,7 +160,7 @@ export default function Home() {
     });
     // Clear state server side
     setMyUser({ name: undefined });
-    fetch("https://drink-sync.azurewebsites.net/state", {
+    fetch("https://game-sync.azurewebsites.net/state", {
       method: "DELETE"
     }).then((response) => console.log(response));
   };
@@ -266,24 +266,35 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const sock = new SockJS("https://drink-sync.azurewebsites.net/ws");
-    stomp.current = Stomp.over(sock);
-    // this.stomp.debug = () => { };
-    stomp.current.connect({
-    }, (event) => {
-      stomp.current.subscribe("/topic/state", (state) => {
-        const syncState = JSON.parse(state.body);
-        if (myUser.name && syncState.owner !== myUser.name) {
-          setGameState(syncState);
-        } else if (!myUser.name) {
-          setGameState(syncState);
-        }
-      });
-    });
+    stompConnect();
   }, []);
 
+  const stompConnect = () => {
+    const sock = new SockJS("https://game-sync.azurewebsites.net/ws");
+    stomp.current = Stomp.over(sock);
+    // this.stomp.debug = () => { };
+    stomp.current.connect({}, onStompConnect, onStompFail);
+  }
+
+  const onStompConnect = (message) => {
+    console.log("Stomp connection successfull.");
+    stomp.current.subscribe("/topic/state", (state) => {
+      const syncState = JSON.parse(state.body);
+      if (myUser.name && syncState.owner !== myUser.name) {
+        setGameState(syncState);
+      } else if (!myUser.name) {
+        setGameState(syncState);
+      }
+    });
+  }
+
+  const onStompFail = (message) => {
+    console.log("Stomp connection failed. Retrying...")
+    setTimeout(stompConnect, 5000);
+  }
+
   useEffect(() => {
-    fetch("https://drink-sync.azurewebsites.net/state", {
+    fetch("https://game-sync.azurewebsites.net/state", {
       headers: { 'content-type': 'application/json' }
     })
       .then(response => response.json())
