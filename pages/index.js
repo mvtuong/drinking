@@ -4,8 +4,8 @@ import userStyles from '../styles/User.module.css';
 import User from '../components/User';
 import { useRef, useState, useEffect } from 'react';
 import Modal from '../components/Modal';
-import SockJS from "sockjs-client";
-import Stomp from "stompjs";
+import { v4 as uuidv4 } from 'uuid';
+import { useChannel } from "../components/AblyReactEffect";
 
 const ICON_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
 const DEFAULT_USERS = [
@@ -45,7 +45,6 @@ const shuffleArray = (arrayInput) => {
 export default function Home() {
   const context = useRef();
   const isUnmounted = useRef();
-  const stomp = useRef();
   const dest = useRef(-1);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -58,8 +57,16 @@ export default function Home() {
   const [currentImage, setCurrentImage] = useState(-1);
   const [stamps, setStamps] = useState([]);
   const [gameState, setGameState] = useState({ players: [], activePlayerIndex: -1 });
-  const [myUser, setMyUser] = useState({ name: undefined });
+  const [myUser, setMyUser] = useState({ name: undefined, id: uuidv4() });
   const [isController, setIsController] = useState(false);
+
+  const [channel, ably] = useChannel("drinking", (message) => {
+    setGameState(message.data);
+  });
+
+  const syncState = (state) => {
+    channel.publish({ name: "sync-state", data: state });
+  }
 
   const onUserRemove = (name) => {
     setGameState((prev) => {
@@ -111,15 +118,6 @@ export default function Home() {
     });
     setUsername('');
   };
-
-  const syncState = (state) => {
-    if (myUser && myUser.name) {
-      state.owner = myUser.name;
-    }
-    if (stomp.current.connected) {
-      stomp.current.send("/app/update-state", {}, JSON.stringify(state));
-    }
-  }
 
   const onUsernameChange = (event) => {
     setUsername(event.target.value);
@@ -182,6 +180,11 @@ export default function Home() {
     setCurrentImage(getRandomInt(1, totalImages));
     setShowImageModal(true);
   };
+
+  const onSyncBtnClick = () => {
+    console.log("Force sync state");
+    syncState(gameState);
+  }
 
   const onImageModalClick = (event) => {
     const radius = 25;
@@ -265,34 +268,6 @@ export default function Home() {
       context.current = new AudioContext();
     }
   }, []);
-
-  useEffect(() => {
-    stompConnect();
-  }, []);
-
-  const stompConnect = () => {
-    const sock = new SockJS("https://game-sync.azurewebsites.net/ws");
-    stomp.current = Stomp.over(sock);
-    // this.stomp.debug = () => { };
-    stomp.current.connect({}, onStompConnect, onStompFail);
-  }
-
-  const onStompConnect = (message) => {
-    console.log("Stomp connection successfull.");
-    stomp.current.subscribe("/topic/state", (state) => {
-      const syncState = JSON.parse(state.body);
-      if (myUser.name && syncState.owner !== myUser.name) {
-        setGameState(syncState);
-      } else if (!myUser.name) {
-        setGameState(syncState);
-      }
-    });
-  }
-
-  const onStompFail = (message) => {
-    console.log("Stomp connection failed. Retrying...")
-    setTimeout(stompConnect, 5000);
-  }
 
   const handleCheckboxChange = (event) => {
     const { checked } = event.target;
@@ -382,6 +357,7 @@ export default function Home() {
         />
         Controller
       </label>
+      <img className={styles.forceSync} src="/sync.svg" role="presentation" onClick={() => onSyncBtnClick()} />
       <img className={styles.helpCenter} src="/question.svg" role="presentation" onClick={() => setShowHelpModal(true)} />
       <img className={styles.colorTable} src="/chromatic.svg" role="presentation" onClick={() => setShowColorsModal(true)} />
 

@@ -105,6 +105,15 @@
   cursor: pointer;
 }
 
+.forceSync {
+  position: absolute;
+  top: 90px;
+  left: 5px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
 .controller {
   position: absolute;
   top: 40px;
@@ -146,7 +155,7 @@
 }
 
 .colorsModal {
-  background-image: url('/colors.png');
+  background-image: url("/colors.png");
 }
 
 .slider {
@@ -163,7 +172,7 @@
   border-radius: 50%;
 }
 
-@media only screen and (max-width : 640px) {
+@media only screen and (max-width: 640px) {
   .slider {
     display: flex;
   }
@@ -176,7 +185,8 @@
     order: 2;
   }
 
-  .btnClear, .btnShuffle {
+  .btnClear,
+  .btnShuffle {
     padding: 6px 12px;
     min-width: 100px;
   }
@@ -191,7 +201,7 @@
   }
 
   .colorsModal {
-    background-image: url('/colors-mobile.png');
+    background-image: url("/colors-mobile.png");
     background-size: contain;
   }
 }
