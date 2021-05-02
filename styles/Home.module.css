@@ -40,18 +40,27 @@
   align-items: center;
 }
 
-.userModal {
+.playerModal {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.userModalNameInput {
+.playerModalNameInput {
   margin: 20px 0;
 }
 
 .error {
   color: red;
+}
+
+.homeBtnsWrapper {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  height: 160px;
+  margin-top: 120px;
 }
 
 .btnsWrapper {
@@ -69,6 +78,11 @@
 
 .sounds input[type="radio"] {
   margin-left: 20px;
+}
+
+.disabled {
+  pointer-events: none;
+  background-color: #ccc !important;
 }
 
 .btnStart {
@@ -98,6 +112,15 @@
 
 .imageGenerate {
   position: absolute;
+  top: 40px;
+  left: 5px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.homeLink {
+  position: absolute;
   top: 5px;
   left: 5px;
   width: 30px;
@@ -107,7 +130,7 @@
 
 .forceSync {
   position: absolute;
-  top: 90px;
+  top: 120px;
   left: 5px;
   width: 30px;
   height: 30px;
@@ -116,7 +139,7 @@
 
 .controller {
   position: absolute;
-  top: 40px;
+  top: 75px;
   left: 5px;
   width: 25px;
   height: 25px;
