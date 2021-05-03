@@ -8,6 +8,7 @@ import Modal from '../../components/Modal';
 import Footer from '../../components/Footer';
 import { v4 as uuidv4 } from 'uuid';
 import { useChannel } from "../../components/AblyReactEffect";
+import ImgView from '../../components/ImgView';
 
 const TOTAL_IMAGES = 19;
 const ICON_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
@@ -124,7 +125,7 @@ export default function Game() {
       ...gameState,
       players: shuffleArray(gameState.players),
     };
-    
+
     updateGameState(newState);
   };
 
@@ -308,6 +309,28 @@ export default function Game() {
     }
   };
 
+  const onImgPointerUp = (location) => {
+    if (currentActivePlayer.id === myPlayerId) {
+      const newState = {
+        ...gameState,
+        winLocation: location,
+      };
+      updateGameState(newState);
+    } else {
+      if (gameState.winLocation) {
+        const winLocation = gameState.winLocation;
+        const a = winLocation[0] - location[0];
+        const b = winLocation[1] - location[1];
+        var distance = Math.hypot(a, b);
+        console.log(distance);
+      }
+    }
+  }
+
+  const onImgPointerMove = (userLocation) => {
+    // TODO: Should we sync this?
+  }
+
   const currentActivePlayer = gameState.players[currentActiveIndex % gameState.players.length] || {};
   const isDisabled = gameState.players.length === 0;
   const controller = gameState.players.find(player => player.role === 'controller');
@@ -387,12 +410,17 @@ export default function Game() {
         </div>
       </Modal>
 
-      <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
+      {/* <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
         <div onClick={onImageModalClick} className={styles.imageModal} style={{ backgroundImage: `url(/images/${currentImage}.jpg)` }}>
           {stamps.map(({ x, y }, idx) =>
             <span className={styles.stamp} key={`stamp-${idx}`} style={{ top: y, left: x }}></span>
           )}
         </div>
+      </Modal> */}
+
+      <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
+        <ImgView imgUrl={`/images/${currentImage}.jpg`} onPointerUp={onImgPointerUp}
+          onPointerMove={onImgPointerMove} ></ImgView>
       </Modal>
 
       <Modal isOpen={showColorsModal} onClose={() => setShowColorsModal(false)} type="image">

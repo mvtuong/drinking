@@ -29,7 +29,8 @@
 .image {
   width: 90vw;
   padding: 0;
-  cursor: url('/circle.png') 25 25, pointer;
+  cursor: url("/circle.png") 25 25, pointer;
+  height: 100%;
 }
 
 .help {
