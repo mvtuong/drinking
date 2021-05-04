@@ -42,26 +42,30 @@ export default function Game() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showColorsModal, setShowColorsModal] = useState(false);
+  const [showWinModal, setShowWinModal] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
 
   const [playerName, setPlayerName] = useState('');
   const [error, setError] = useState('');
 
   const [randomNumber, setRandomNumber] = useState(1);
-  const [currentImage, setCurrentImage] = useState(1);
+  // const [currentImage, setCurrentImage] = useState(1);
   const [sound, setSound] = useState('triangle');
 
   const [stamps, setStamps] = useState([]);
 
   // global state
-  const [gameState, setGameState] = useState({ players: [], destinationIndex: -1 });
+  const [gameState, setGameState] = useState({ players: [], destinationIndex: -1, imgUrl: '/images/1.jpg' });
   // local state
   const [currentActiveIndex, setCurrentActiveIndex] = useState(-1);
-  const [myPlayerId, setMyPlayerId] = useState('');
+  const [myPlayerId, setMyPlayerId] = useState(uuidv4());
+
+  const winTolerance = 50;
 
   // Subscribe to the channel id from the url
   const [channel, ably] = useChannel(id, (message) => {
     setGameState(message.data);
+    setShowWinModal(message.data.winPlayerName);
   });
 
   const syncGameState = (newState) => {
@@ -95,20 +99,20 @@ export default function Game() {
 
     setShowPlayerModal(false);
 
-    const savedPlayerId = localStorage.getItem('myPlayerId');
-    let playerId;
-    if (savedPlayerId) {
-      playerId = savedPlayerId;
-    } else {
-      playerId = uuidv4();
-      localStorage.setItem('myPlayerId', playerId);
-    }
+    //const savedPlayerId = localStorage.getItem('myPlayerId');
+    //let playerId;
+    //if (savedPlayerId) {
+    //  playerId = savedPlayerId;
+    // } else {
+    // playerId = uuidv4();
+    //  localStorage.setItem('myPlayerId', playerId);
+    //}
 
-    setMyPlayerId(playerId);
+    // setMyPlayerId(playerId);
     const playerToAdd = {
       name: playerName,
       iconNumber: randomNumber,
-      id: playerId,
+      id: myPlayerId,
       role: 'player',
     };
 
@@ -141,9 +145,13 @@ export default function Game() {
 
   const onStartBtnClick = () => {
     const destination = getRandomInt(gameState.players.length * 4, gameState.players.length * 5);
+    const randomImage = getRandomInt(1, TOTAL_IMAGES);
     const newState = {
       ...gameState,
+      imgUrl: `/images/${randomImage}.jpg`,
       destinationIndex: destination,
+      winPlayerName: undefined,
+      winLocation: undefined
     };
 
     updateGameState(newState);
@@ -277,7 +285,7 @@ export default function Game() {
   };
 
   const onImageBtnClick = () => {
-    setCurrentImage(getRandomInt(1, TOTAL_IMAGES));
+    // setCurrentImage(getRandomInt(1, TOTAL_IMAGES));
     setShowImageModal(true);
   };
 
@@ -322,7 +330,13 @@ export default function Game() {
         const a = winLocation[0] - location[0];
         const b = winLocation[1] - location[1];
         var distance = Math.hypot(a, b);
-        console.log(distance);
+        if (distance <= winTolerance) {
+          const newState = {
+            ...gameState,
+            winPlayerName: playerName,
+          };
+          updateGameState(newState);
+        }
       }
     }
   }
@@ -419,12 +433,16 @@ export default function Game() {
       </Modal> */}
 
       <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
-        <ImgView imgUrl={`/images/${currentImage}.jpg`} onPointerUp={onImgPointerUp}
+        <ImgView imgUrl={gameState.imgUrl} onPointerUp={onImgPointerUp}
           onPointerMove={onImgPointerMove} ></ImgView>
       </Modal>
 
       <Modal isOpen={showColorsModal} onClose={() => setShowColorsModal(false)} type="image">
         <div className={`${styles.imageModal} ${styles.colorsModal}`} />
+      </Modal>
+
+      <Modal isOpen={showWinModal} onClose={() => setShowWinModal(false)}>
+        <div>Congratulations {gameState.winPlayerName}! You have won the game.</div>
       </Modal>
 
       <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} type="help">
