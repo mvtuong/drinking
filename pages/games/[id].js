@@ -384,7 +384,7 @@ export default function Game() {
               isStopped={isStopping}
             />
           )}
-          {!myPlayerAdded && channel.state === "attached" &&
+          {!myPlayerAdded &&
             <div className={`${playerStyles.player} ${playerStyles.addPlayerBtn}`} role="presentation" onClick={onAddPlayerModalShow}>
               <img className={playerStyles.playerImg} src="/add-player.svg" />
             </div>
