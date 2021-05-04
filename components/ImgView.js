@@ -8,6 +8,8 @@ export default class ImgView extends React.Component {
     imgWidth = 0;
     imgHeight = 0;
 
+    dragging = false;
+
     constructor(props) {
         super(props);
     }
@@ -58,6 +60,7 @@ export default class ImgView extends React.Component {
         this.orbitControls.minPolarAngle = Math.PI / 2;
         this.orbitControls.screenSpacePanning = true;
         this.container.appendChild(this.renderer.domElement);
+        this.container.addEventListener('pointerdown', () => { this.pointerDown = true; })
         this.container.addEventListener('pointermove', this.onPointerMove.bind(this), false);
         this.container.addEventListener('pointerup', this.onPointerUp.bind(this), false);
         this.userPickLocation = new THREE.Group();
@@ -104,6 +107,11 @@ export default class ImgView extends React.Component {
     }
 
     onPointerUp(event) {
+        this.pointerDown = false;
+        if (this.dragging) {
+            this.dragging = false;
+            return;
+        }
         const mouse = this.getMouseFromEvent(event);
         const coords = this.getIntersectCoordinates(mouse);
         if (coords) {
@@ -115,6 +123,9 @@ export default class ImgView extends React.Component {
     }
 
     onPointerMove(event) {
+        if (this.pointerDown) {
+            this.dragging = true;
+        }
         const mouse = this.getMouseFromEvent(event);
         if (!this.oldMouse) {
             this.oldMouse = mouse;

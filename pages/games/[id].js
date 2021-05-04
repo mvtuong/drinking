@@ -77,10 +77,10 @@ export default function Game() {
     syncGameState(newState);
   };
 
-  const onPlayerRemove = (id) => {
+  const onPlayerRemove = (name) => {
     const newState = {
       ...gameState,
-      players: gameState.players.filter(player => player.id !== id),
+      players: gameState.players.filter(player => player.name !== name),
     };
 
     updateGameState(newState);
@@ -294,12 +294,12 @@ export default function Game() {
     syncGameState(gameState);
   }
 
-  const onImageModalClick = (event) => {
-    const radius = 25;
-    const x = event.clientX - radius;
-    const y = event.clientY - radius;
-    setStamps([...stamps, { x, y }]);
-  };
+  // const onImageModalClick = (event) => {
+  //   const radius = 25;
+  //   const x = event.clientX - radius;
+  //   const y = event.clientY - radius;
+  //   setStamps([...stamps, { x, y }]);
+  // };
 
   const onAddPlayerModalShow = () => {
     setShowPlayerModal(true);
@@ -384,7 +384,7 @@ export default function Game() {
               isStopped={isStopping}
             />
           )}
-          {!myPlayerAdded &&
+          {!myPlayerAdded && channel.state === "attached" &&
             <div className={`${playerStyles.player} ${playerStyles.addPlayerBtn}`} role="presentation" onClick={onAddPlayerModalShow}>
               <img className={playerStyles.playerImg} src="/add-player.svg" />
             </div>
@@ -411,7 +411,9 @@ export default function Game() {
         />
         Controller
       </label>
-      <img className={styles.forceSync} src="/sync.svg" role="presentation" onClick={() => onSyncBtnClick()} />
+      {isController &&
+        <img className={styles.forceSync} src="/sync.svg" role="presentation" onClick={() => onSyncBtnClick()} />
+      }
       <img className={styles.helpCenter} src="/question.svg" role="presentation" onClick={() => setShowHelpModal(true)} />
       <img className={styles.colorTable} src="/chromatic.svg" role="presentation" onClick={() => setShowColorsModal(true)} />
 
@@ -423,14 +425,6 @@ export default function Game() {
           <button onClick={onPlayerAdd}>Add Player</button>
         </div>
       </Modal>
-
-      {/* <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
-        <div onClick={onImageModalClick} className={styles.imageModal} style={{ backgroundImage: `url(/images/${currentImage}.jpg)` }}>
-          {stamps.map(({ x, y }, idx) =>
-            <span className={styles.stamp} key={`stamp-${idx}`} style={{ top: y, left: x }}></span>
-          )}
-        </div>
-      </Modal> */}
 
       <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
         <ImgView imgUrl={gameState.imgUrl} onPointerUp={onImgPointerUp}
