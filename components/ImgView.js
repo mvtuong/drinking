@@ -64,8 +64,10 @@ export default class ImgView extends React.Component {
         this.container.addEventListener('pointermove', this.onPointerMove.bind(this), false);
         this.container.addEventListener('pointerup', this.onPointerUp.bind(this), false);
         this.userPickLocation = new THREE.Group();
-        this.userPickLocation.name = this.pickLayerName;
         this.scene.add(this.userPickLocation);
+        this.playerPickLocation = new THREE.Group();
+        this.scene.add(this.playerPickLocation);
+        this.addPlayersPickLocation(this.props.locations);
         this.loadImage();
         this.animate();
     }
@@ -115,7 +117,7 @@ export default class ImgView extends React.Component {
         const mouse = this.getMouseFromEvent(event);
         const coords = this.getIntersectCoordinates(mouse);
         if (coords) {
-            this.addPickLocation(coords);
+            this.addUserPickLocation(coords);
             if (this.props.onPointerUp) {
                 this.props.onPointerUp(coords);
             }
@@ -165,7 +167,7 @@ export default class ImgView extends React.Component {
         }
     }
 
-    addPickLocation(coords) {
+    addUserPickLocation(coords) {
         this.userPickLocation.clear();
         this.userPickLocation.position.set(coords[0], coords[1], 10);
         const geometry = new THREE.RingGeometry(30, 40, 32);
@@ -173,6 +175,24 @@ export default class ImgView extends React.Component {
         const circle = new THREE.Mesh(geometry, material);
         this.userPickLocation.add(circle);
     }
+
+    addPlayersPickLocation(coordPairs) {
+        this.playerPickLocation.clear();
+        coordPairs.forEach((coords) => {
+            if (coords) {
+                const geometry = new THREE.RingGeometry(30, 40, 32);
+                const material = new THREE.MeshBasicMaterial({ color: "blue" });
+                const circle = new THREE.Mesh(geometry, material);
+                circle.position.set(coords[0], coords[1], 10);
+                this.playerPickLocation.add(circle);
+            }
+        });
+    }
+
+    componentWillReceiveProps(nextProps) {
+        this.addPlayersPickLocation(nextProps.locations);
+    }
+
 
     render() {
         return (

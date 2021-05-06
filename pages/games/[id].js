@@ -146,12 +146,14 @@ export default function Game() {
   const onStartBtnClick = () => {
     const destination = getRandomInt(gameState.players.length * 4, gameState.players.length * 5);
     const randomImage = getRandomInt(1, TOTAL_IMAGES);
+    const players = gameState.players.forEach(p => p.location = [])
     const newState = {
       ...gameState,
       imgUrl: `/images/${randomImage}.jpg`,
       destinationIndex: destination,
       winPlayerName: undefined,
-      winLocation: undefined
+      winLocation: undefined,
+      player: players
     };
 
     updateGameState(newState);
@@ -336,13 +338,12 @@ export default function Game() {
             winPlayerName: playerName,
           };
           updateGameState(newState);
+        } else {
+          gameState.players.filter(p => p.id === myPlayerId)[0].location = location;
+          updateGameState({ ...gameState });
         }
       }
     }
-  }
-
-  const onImgPointerMove = (userLocation) => {
-    // TODO: Should we sync this?
   }
 
   const currentActivePlayer = gameState.players[currentActiveIndex % gameState.players.length] || {};
@@ -350,6 +351,9 @@ export default function Game() {
   const controller = gameState.players.find(player => player.role === 'controller');
   const isController = myPlayerId === (controller || {}).id;
   const myPlayerAdded = gameState.players.some(player => player.id === myPlayerId);
+  const locations = gameState.players
+    .filter(p => p.id !== currentActivePlayer.id && p.id !== myPlayerId)
+    .map(p => p.location);
 
   return (
     <div className={styles.container}>
@@ -427,8 +431,7 @@ export default function Game() {
       </Modal>
 
       <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
-        <ImgView imgUrl={gameState.imgUrl} onPointerUp={onImgPointerUp}
-          onPointerMove={onImgPointerMove} ></ImgView>
+        <ImgView imgUrl={gameState.imgUrl} onPointerUp={onImgPointerUp} locations={locations}></ImgView>
       </Modal>
 
       <Modal isOpen={showColorsModal} onClose={() => setShowColorsModal(false)} type="image">
