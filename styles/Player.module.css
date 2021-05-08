@@ -35,6 +35,13 @@
   height: 80px;
 }
 
+.resetBtn {
+  margin: 10px auto;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
 .closeBtn {
   position: absolute;
   top: 5px;

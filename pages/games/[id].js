@@ -206,14 +206,18 @@ export default function Game() {
       setCurrentActiveIndex(0);
       setIsStopping(false);
     }
-  }, [gameState.destinationIndex])
+  }, [gameState.destinationIndex]);
 
-  // Pre-set the random number for the next player icon
-  useEffect(() => {
+  const generateImage = () => {
     const playerNumbers = gameState.players.map(player => player.iconNumber);
     const numbers = ICON_NUMBERS.filter(number => !playerNumbers.includes(number));
     const random = getRandomInt(0, numbers.length - 1);
     setRandomNumber(numbers[random]);
+  };
+
+  // Pre-set the random number for the next player icon
+  useEffect(() => {
+    generateImage();
   }, [gameState.players]);
 
   useEffect(() => {
@@ -424,6 +428,7 @@ export default function Game() {
       <Modal isOpen={showPlayerModal} onClose={() => setShowPlayerModal(false)} type="player">
         <div className={styles.playerModal}>
           <img className={playerStyles.playerImg} src={`/legos/${randomNumber}.svg`} alt="" />
+          <img className={playerStyles.resetBtn} src="/reset.svg" alt="" onClick={() => generateImage()} />
           <input type="text" value={playerName} onChange={onPlayerNameChange} onKeyDown={onKeyDown} autoFocus placeholder="Name" className={styles.playerModalNameInput} />
           <p className={styles.error}>{error}</p>
           <button onClick={onPlayerAdd}>Add Player</button>
