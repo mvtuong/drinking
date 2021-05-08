@@ -42,9 +42,9 @@ export default function Home() {
       <main className={styles.main}>
         <h1 className={styles.title}>Welcome to Drinking Game</h1>
         <div className={styles.homeBtnsWrapper}>
-          <button className={styles.btnNew} onClick={() => onNewBtnClick(false)}>New Game</button>
-          <button className={styles.btnJoin} onClick={() => setShowRoomModal(true)}>Join Game</button>
-          <button className={styles.btnNewClassic} onClick={() => onNewBtnClick(true)}>New Game (Classic)</button>
+          <button onClick={() => onNewBtnClick(false)}>New Game</button>
+          <button onClick={() => setShowRoomModal(true)}>Join Game</button>
+          <button onClick={() => onNewBtnClick(true)}>New Game (Classic)</button>
         </div>
       </main>
 

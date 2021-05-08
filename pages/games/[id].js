@@ -43,6 +43,7 @@ export default function Game() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showColorsModal, setShowColorsModal] = useState(false);
   const [showWinModal, setShowWinModal] = useState(false);
+  const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
 
   const [playerName, setPlayerName] = useState('');
@@ -55,7 +56,12 @@ export default function Game() {
   const [stamps, setStamps] = useState([]);
 
   // global state
-  const [gameState, setGameState] = useState({ players: [], destinationIndex: -1, imgUrl: '/images/1.jpg' });
+  const [gameState, setGameState] = useState({
+    players: [],
+    destinationIndex: -1,
+    imgUrl: '/images/1.jpg',
+    selectedPlayerIds: [],
+  });
   // local state
   const [currentActiveIndex, setCurrentActiveIndex] = useState(-1);
   const [myPlayerId, setMyPlayerId] = useState(uuidv4());
@@ -146,13 +152,16 @@ export default function Game() {
   const onStartBtnClick = () => {
     const destination = getRandomInt(gameState.players.length * 4, gameState.players.length * 5);
     const randomImage = getRandomInt(1, TOTAL_IMAGES);
-    const players = gameState.players.forEach(p => p.location = [])
+    const players = gameState.players.forEach(p => p.location = []);
+    const totalPlayers = gameState.players.length;
     const newState = {
       ...gameState,
       imgUrl: `/images/${randomImage}.jpg`,
       destinationIndex: destination,
       winPlayerName: undefined,
       winLocation: undefined,
+      luckyPlayerId: (gameState.players[destination % totalPlayers] || {}).id,
+      selectedPlayerIds: [],
       player: players
     };
 
@@ -181,7 +190,10 @@ export default function Game() {
         ...gameState,
         destinationIndex: -1,
       }
-
+      if (myPlayerId === gameState.luckyPlayerId) {
+        setShowPlayersModal(true);
+      }
+      
       updateGameState(newState);
       return;
     }
@@ -317,6 +329,31 @@ export default function Game() {
     setPlayerName(event.target.value);
   };
 
+  const onPlayerClick = (id) => {
+    let newSelectedIds;
+    if (gameState.selectedPlayerIds.includes(id)) {
+      newSelectedIds = gameState.selectedPlayerIds.filter(_id => _id !== id);
+    } else {
+      newSelectedIds = [...gameState.selectedPlayerIds, id];
+    }
+
+    const newState = {
+      ...gameState,
+      selectedPlayerIds: newSelectedIds,
+    };
+
+    updateGameState(newState);
+  };
+
+  const onConfirmBtnClick = () => {
+    if (gameState.selectedPlayerIds.length === 0) {
+      setError('Please select at least one player');
+      return;
+    }
+    setError('');
+    setShowPlayersModal(false);
+  };
+
   const onKeyDown = (event) => {
     if (event.key === 'Enter') {
       onPlayerAdd();
@@ -324,6 +361,7 @@ export default function Game() {
   };
 
   const onImgPointerUp = (location) => {
+    // currentActivePlayer is the lucky one only after the animation
     if (currentActivePlayer.id === myPlayerId) {
       const newState = {
         ...gameState,
@@ -459,6 +497,25 @@ export default function Game() {
         <hr />
         <br />
         <p><strong>Settings:</strong> You can add/remove/hide/reveal a player. You can also shuffle/clear the list of players. Game sound can be adjusted in the page footer.</p>
+      </Modal>
+
+      <Modal isOpen={showPlayersModal} type="players">
+        <div className={styles.selectPlayersModal}>
+          <p>You're the lucky one. Please select the players for your game</p>
+          <div className={styles.content}>
+            {gameState.players && gameState.players.filter(player => player.id !== gameState.luckyPlayerId).map((player) =>
+              <Player
+                key={`${player.name}-${player.iconNumber}`}
+                name={player.name}
+                iconNumber={player.iconNumber}
+                onClick={() => onPlayerClick(player.id)}
+                isSelected={(gameState.selectedPlayerIds || []).includes(player.id)}
+              />
+            )}
+          </div>
+          <p className={styles.error}>{error}</p>
+          <button onClick={onConfirmBtnClick}>Confirm</button>
+        </div>
       </Modal>
 
       <Footer setSound={setSound} />

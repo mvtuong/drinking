@@ -3,7 +3,11 @@ import styles from '../styles/Modal.module.css';
 
 const Modal = ({ isOpen, onClose, type = '', children }) => {
   const onEscHanlder = (event) => {
-    if(event.keyCode === 27) {
+    if (type === 'players') {
+      return;
+    }
+
+    if (event.keyCode === 27) {
       onClose();
     }
   };
@@ -20,7 +24,9 @@ const Modal = ({ isOpen, onClose, type = '', children }) => {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={`${styles.modal} ${styles[type]}`} onClick={(e) => { e.stopPropagation() }}>
-        <img className={styles.closeBtn} role="presentation" src="/remove.svg" alt="" onClick={onClose} />
+        {type !== 'players' &&
+          <img className={styles.closeBtn} role="presentation" src="/remove.svg" alt="" onClick={onClose} />
+        }
         {children}
       </div>
     </div>

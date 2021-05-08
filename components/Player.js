@@ -1,14 +1,22 @@
 import { useState } from "react";
 import styles from '../styles/Player.module.css';
 
-const Player = ({ name, iconNumber, isActive, isStopped, onRemove }) => {
+const Player = ({ name, iconNumber, isActive, isStopped, isSelected, onRemove, onClick }) => {
   const [opened, setOpened] = useState(true);
+
+  const onUserClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      setOpened(prev => !prev);
+    }
+  };
 
   return (
     <div
-      className={`${styles.player} ${isActive ? styles.active : ''} ${isStopped ? styles.stopped : ''} ${onRemove ? '' : styles.spin}`}
+      className={`${styles.player} ${isActive ? styles.active : ''} ${isStopped ? styles.stopped : ''} ${isSelected ? styles.selected : ''} ${onRemove ? '' : styles.spin}`}
       role="presentation"
-      onClick={() => setOpened(prev => !prev)}
+      onClick={onUserClick}
     >
       {onRemove && <img className={styles.closeBtn} src="/remove.svg" role="presentation" onClick={(e) => { e.stopPropagation(); onRemove(name); }} />}
       {opened

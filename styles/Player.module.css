@@ -14,6 +14,10 @@
     0px 0px 0px 10px rgba(255, 165, 0, 0.1);
 }
 
+.player.selected {
+  background-color: red !important;
+}
+
 @keyframes blink {
   50% {
     opacity: 0.0;
