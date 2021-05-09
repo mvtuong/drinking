@@ -7,7 +7,6 @@ export default class ImgView extends React.Component {
 
     imgWidth = 0;
     imgHeight = 0;
-
     dragging = false;
 
     constructor(props) {
@@ -25,6 +24,12 @@ export default class ImgView extends React.Component {
             this.imgMesh = new THREE.Mesh(geometry, material);
             this.imgMesh.name = "img_layer";
             this.scene.add(this.imgMesh);
+
+            const canvas = document.createElement("canvas");
+            this.canvasContext = canvas.getContext("2d");
+            this.canvasContext.canvas.width = this.imgWidth;
+            this.canvasContext.canvas.height = this.imgHeight;
+            this.canvasContext.drawImage(texture.image, 0, 0);
         });
     }
 
@@ -46,6 +51,7 @@ export default class ImgView extends React.Component {
 
     componentDidMount() {
         this.renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
+        this.renderer.setClearColor(0xffffff, 1);
         this.scene = new THREE.Scene();
         this.raycaster = new THREE.Raycaster();
         window.addEventListener("resize", this.onResize.bind(this));
@@ -60,9 +66,11 @@ export default class ImgView extends React.Component {
         this.orbitControls.minPolarAngle = Math.PI / 2;
         this.orbitControls.screenSpacePanning = true;
         this.container.appendChild(this.renderer.domElement);
-        this.container.addEventListener('pointerdown', () => { this.pointerDown = true; })
-        this.container.addEventListener('pointermove', this.onPointerMove.bind(this), false);
-        this.container.addEventListener('pointerup', this.onPointerUp.bind(this), false);
+        if (this.props.canSelect) {
+            this.container.addEventListener('pointerdown', () => { this.pointerDown = true; })
+            this.container.addEventListener('pointermove', this.onPointerMove.bind(this), false);
+            this.container.addEventListener('pointerup', this.onPointerUp.bind(this), false);
+        }
         this.userPickLocation = new THREE.Group();
         this.scene.add(this.userPickLocation);
         this.playerPickLocation = new THREE.Group();
@@ -161,10 +169,27 @@ export default class ImgView extends React.Component {
         let intersects = this.raycaster.intersectObjects(this.scene.children, true);
         const intersect = intersects.filter(i => i.object.name === "img_layer")[0];
         if (intersect) {
+            this.updateColorAtCursor(intersect);
             return [intersect.point.x, intersect.point.y];
         } else {
             return undefined;
         }
+    }
+
+    updateColorAtCursor(intersect) {
+        const texData = this.canvasContext.getImageData(0, 0, this.imgWidth, this.imgHeight);
+        const tx = Math.min(this.emod(intersect.uv.x, 1) * texData.width | 0, texData.width - 1);
+        let ty = Math.min(this.emod(intersect.uv.y, 1) * texData.height | 0, texData.height - 1);
+        ty = texData.height - ty;
+        const offset = (ty * texData.width + tx) * 4;
+        const r = texData.data[offset + 0];
+        const g = texData.data[offset + 1];
+        const b = texData.data[offset + 2];
+        this.rgb = [r, g, b];
+    }
+
+    emod(n, m) {
+        return ((n % m) + m) % m;
     }
 
     addUserPickLocation(coords) {
@@ -174,6 +199,9 @@ export default class ImgView extends React.Component {
         const material = new THREE.MeshBasicMaterial({ color: "white" });
         const circle = new THREE.Mesh(geometry, material);
         this.userPickLocation.add(circle);
+        if (this.props.onCursorColorUpdate && this.rgb) {
+            this.props.onCursorColorUpdate(this.rgb);
+        }
     }
 
     addPlayersPickLocation(coordPairs) {

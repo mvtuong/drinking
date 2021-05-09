@@ -53,6 +53,8 @@ export default function Game() {
   // const [currentImage, setCurrentImage] = useState(1);
   const [sound, setSound] = useState('triangle');
 
+  const color = useRef();
+
   // global state
   const [gameState, setGameState] = useState({
     players: [],
@@ -176,7 +178,7 @@ export default function Game() {
       if (myPlayerId === gameState.luckyPlayerId) {
         setShowPlayersModal(true);
       }
-      
+
       updateGameState(newState);
       return;
     }
@@ -381,6 +383,16 @@ export default function Game() {
     }
   }
 
+  const colorUpdate = (rgb) => {
+    if (currentActivePlayer.id === myPlayerId) {
+      const newState = {
+        ...gameState,
+        pickedColor: `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`,
+      };
+      setGameState(newState);
+    }
+  }
+
   const currentActivePlayer = gameState.players[currentActiveIndex % gameState.players.length] || {};
   const isDisabled = gameState.players.length === 0;
   const controller = gameState.players.find(player => player.role === 'controller');
@@ -467,7 +479,9 @@ export default function Game() {
       </Modal>
 
       <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
-        <ImgView imgUrl={gameState.imgUrl} onPointerUp={onImgPointerUp} locations={locations}></ImgView>
+        <div style={{ width: "50px", height: "50px", backgroundColor: gameState.pickedColor, position: "absolute" }}></div>
+        <ImgView imgUrl={gameState.imgUrl} onPointerUp={onImgPointerUp} locations={locations}
+          canSelect={gameState.selectedPlayerIds.indexOf(myPlayerId) > -1 || currentActivePlayer.id === myPlayerId} onCursorColorUpdate={colorUpdate}></ImgView>
       </Modal>
 
       <Modal isOpen={showColorsModal} onClose={() => setShowColorsModal(false)} type="image">
