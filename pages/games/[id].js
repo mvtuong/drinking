@@ -53,8 +53,6 @@ export default function Game() {
   // const [currentImage, setCurrentImage] = useState(1);
   const [sound, setSound] = useState('triangle');
 
-  const [stamps, setStamps] = useState([]);
-
   // global state
   const [gameState, setGameState] = useState({
     players: [],
@@ -64,7 +62,7 @@ export default function Game() {
   });
   // local state
   const [currentActiveIndex, setCurrentActiveIndex] = useState(-1);
-  const [myPlayerId, setMyPlayerId] = useState(uuidv4());
+  const [myPlayerId, setMyPlayerId] = useState();
 
   const winTolerance = 50;
 
@@ -83,10 +81,10 @@ export default function Game() {
     syncGameState(newState);
   };
 
-  const onPlayerRemove = (name) => {
+  const onPlayerRemove = (id) => {
     const newState = {
       ...gameState,
-      players: gameState.players.filter(player => player.name !== name),
+      players: gameState.players.filter(player => player.id !== id),
     };
 
     updateGameState(newState);
@@ -98,23 +96,8 @@ export default function Game() {
       return;
     }
 
-    if (gameState.players.some(player => player.name === playerName)) {
-      setError('Duplicated Name! Please try another one');
-      return;
-    }
-
     setShowPlayerModal(false);
 
-    //const savedPlayerId = localStorage.getItem('myPlayerId');
-    //let playerId;
-    //if (savedPlayerId) {
-    //  playerId = savedPlayerId;
-    // } else {
-    // playerId = uuidv4();
-    //  localStorage.setItem('myPlayerId', playerId);
-    //}
-
-    // setMyPlayerId(playerId);
     const playerToAdd = {
       name: playerName,
       iconNumber: randomNumber,
@@ -162,7 +145,7 @@ export default function Game() {
       winLocation: undefined,
       luckyPlayerId: (gameState.players[destination % totalPlayers] || {}).id,
       selectedPlayerIds: [],
-      player: players
+      player: players,
     };
 
     updateGameState(newState);
@@ -237,6 +220,17 @@ export default function Game() {
     if (AudioContext) {
       context.current = new AudioContext();
     }
+
+    const savedPlayerId = localStorage.getItem('myPlayerId');
+    let playerId;
+    if (savedPlayerId) {
+      playerId = savedPlayerId;
+    } else {
+      playerId = uuidv4();
+      localStorage.setItem('myPlayerId', playerId);
+    }
+
+    setMyPlayerId(playerId);
   }, []);
 
   const playSound = (type = 'triangle', frequency = 260.0, time = 1) => {
@@ -298,7 +292,6 @@ export default function Game() {
   }
 
   const onImageModalClose = () => {
-    setStamps([]);
     setShowImageModal(false);
   };
 
@@ -425,7 +418,7 @@ export default function Game() {
               key={`${player.name}-${player.iconNumber}`}
               name={player.name}
               iconNumber={player.iconNumber}
-              onRemove={onPlayerRemove}
+              onRemove={isController || myPlayerId === player.id ? () => onPlayerRemove(player.id) : undefined}
               isActive={idx === currentActiveIndex % gameState.players.length}
               isStopped={isStopping}
             />
