@@ -201,6 +201,32 @@
   border-radius: 50%;
 }
 
+.pickedColor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50px;
+  height: 50px;
+}
+
+.arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+
+.leftArrow {
+  left: 0;
+}
+
+.rightArrow {
+  right: 0;
+}
+
 @media only screen and (max-width: 640px) {
   .slider {
     display: flex;

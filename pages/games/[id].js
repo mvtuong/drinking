@@ -39,7 +39,6 @@ export default function Game() {
   const isUnmounted = useRef();
 
   const [showPlayerModal, setShowPlayerModal] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showColorsModal, setShowColorsModal] = useState(false);
   const [showWinModal, setShowWinModal] = useState(false);
@@ -59,8 +58,9 @@ export default function Game() {
   const [gameState, setGameState] = useState({
     players: [],
     destinationIndex: -1,
-    imgUrl: '/images/1.jpg',
+    imgIndex: 1,
     selectedPlayerIds: [],
+    showImageModal: false,
   });
   // local state
   const [currentActiveIndex, setCurrentActiveIndex] = useState(-1);
@@ -141,7 +141,7 @@ export default function Game() {
     const totalPlayers = gameState.players.length;
     const newState = {
       ...gameState,
-      imgUrl: `/images/${randomImage}.jpg`,
+      imgIndex: randomImage,
       destinationIndex: destination,
       winPlayerName: undefined,
       winLocation: undefined,
@@ -294,12 +294,21 @@ export default function Game() {
   }
 
   const onImageModalClose = () => {
-    setShowImageModal(false);
+    const newState = {
+      ...gameState,
+      showImageModal: false,
+    };
+
+    updateGameState(newState);
   };
 
   const onImageBtnClick = () => {
-    // setCurrentImage(getRandomInt(1, TOTAL_IMAGES));
-    setShowImageModal(true);
+    const newState = {
+      ...gameState,
+      showImageModal: true,
+    };
+
+    updateGameState(newState);
   };
 
   const onSyncBtnClick = () => {
@@ -347,6 +356,29 @@ export default function Game() {
     }
     setError('');
     setShowPlayersModal(false);
+    
+    const newState = {
+      ...gameState,
+      showImageModal: true,
+    };
+
+    updateGameState(newState);
+  };
+
+  const onArrowClick = (direction) => {
+    const newState = gameState;
+
+    if (direction === 'right') {
+      newState.imgIndex = (gameState.imgIndex + 1) % TOTAL_IMAGES;
+    } else {
+      if (gameState.imgIndex > 1) {
+        newState.imgIndex = (gameState.imgIndex - 1) % TOTAL_IMAGES;
+      } else {
+        newState.imgIndex = TOTAL_IMAGES;
+      }
+    }
+
+    updateGameState(newState);
   };
 
   const onKeyDown = (event) => {
@@ -357,7 +389,7 @@ export default function Game() {
 
   const onImgPointerUp = (location) => {
     // currentActivePlayer is the lucky one only after the animation
-    if (currentActivePlayer.id === myPlayerId) {
+    if (gameState.luckyPlayerId === myPlayerId) {
       const newState = {
         ...gameState,
         winLocation: location,
@@ -478,9 +510,15 @@ export default function Game() {
         </div>
       </Modal>
 
-      <Modal isOpen={showImageModal} onClose={onImageModalClose} type="image">
-        <div style={{ width: "50px", height: "50px", backgroundColor: gameState.pickedColor, position: "absolute" }}></div>
-        <ImgView imgUrl={gameState.imgUrl} onPointerUp={onImgPointerUp} locations={locations}
+      <Modal isOpen={gameState.showImageModal} onClose={onImageModalClose} type="image">
+        {myPlayerId === gameState.luckyPlayerId &&
+          <>
+            <img className={`${styles.arrow} ${styles.leftArrow}`} src="/left-arrow.svg" role="presentation" onClick={() => onArrowClick('left')} />
+            <img className={`${styles.arrow} ${styles.rightArrow}`} src="/right-arrow.svg" role="presentation" onClick={() => onArrowClick('right')} />
+          </>
+        }
+        <div className={styles.pickedColor} style={{ backgroundColor: gameState.pickedColor }}></div>
+        <ImgView imgUrl={`/images/${gameState.imgIndex}.jpg`} onPointerUp={onImgPointerUp} locations={locations}
           canSelect={gameState.selectedPlayerIds.indexOf(myPlayerId) > -1 || currentActivePlayer.id === myPlayerId} onCursorColorUpdate={colorUpdate}></ImgView>
       </Modal>
 
