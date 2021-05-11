@@ -9,6 +9,7 @@ export default class ImgView extends React.Component {
     imgHeight = 0;
     dragging = false;
     playerPickLocation = new THREE.Group();
+    winLocation = new THREE.Group();
     currentImgIndex = 0;
 
     constructor(props) {
@@ -160,18 +161,12 @@ export default class ImgView extends React.Component {
             }
             this.playerPickLocation.add(playerMesh);
         });
-        if (this.allPlayersHaveSelectedLocations()) {
-            this.playerPickLocation.children.visible = true;
-        }
     }
 
     updatePlayerLocation(player) {
         const playerLocation = this.playerPickLocation.children.filter(c => c.name === player.iconNumber)[0];
         const coords = player.location;
         playerLocation.position.set(coords[0], coords[1], 10);
-        if (this.allPlayersHaveSelectedLocations()) {
-            this.playerPickLocation.children.forEach(p => p.visible = true);
-        }
     }
 
     componentWillReceiveProps(nextProps) {
@@ -185,16 +180,15 @@ export default class ImgView extends React.Component {
                 }
             }
         });
+        if (this.props.gameState.showWinLocation) {
+            this.playerPickLocation.children.forEach(p => p.visible = true);
+        }
     }
 
     onPointerMove(event) {
         if (this.pointerDown) {
             this.dragging = true;
         }
-    }
-
-    allPlayersHaveSelectedLocations() {
-        return this.playerPickLocation.children.length - 1 === this.props.gameState.selectedPlayerIds.length;
     }
 
     render() {

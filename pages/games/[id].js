@@ -127,6 +127,7 @@ export default function Game() {
     const newState = {
       ...gameState,
       players: [],
+      showWinLocation: false
     };
 
     setMyPlayerId('');
@@ -145,6 +146,7 @@ export default function Game() {
       luckyPlayerId: (gameState.players[destination % totalPlayers] || {}).id,
       selectedPlayerIds: [],
       player: players,
+      showWinLocation: false
     };
 
     updateGameState(newState);
@@ -251,6 +253,14 @@ export default function Game() {
     o.start(0);
     g.gain.exponentialRampToValueAtTime(0.00001, context.current.currentTime + time);
   };
+
+  const handleShowWinLocation = () => {
+    const newState = {
+      ...gameState,
+      showWinLocation: true
+    };
+    updateGameState(newState);
+  }
 
   const handleControllerCheckboxChange = (event) => {
     const { checked } = event.target;
@@ -485,6 +495,9 @@ export default function Game() {
         }
         <div className={styles.pickedColor} style={{ backgroundColor: gameState.pickedColor }}></div>
         <ImgView gameState={gameState} onUpdate={onGameStateUpdated} myPlayerId={myPlayerId} activePlayer={currentActivePlayer}></ImgView>
+        {isController && <div className={styles.showWinLocation}>
+          <button onClick={handleShowWinLocation}>Show win location</button>
+        </div>}
       </Modal>
 
       <Modal isOpen={showColorsModal} onClose={() => setShowColorsModal(false)} type="image">
