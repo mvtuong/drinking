@@ -484,8 +484,7 @@ export default function Game() {
           </>
         }
         <div className={styles.pickedColor} style={{ backgroundColor: gameState.pickedColor }}></div>
-        <ImgView imgUrl={`/images/${gameState.imgIndex}.jpg`} onPointerUp={onImgPointerUp} locations={locations}
-          canSelect={gameState.selectedPlayerIds.indexOf(myPlayerId) > -1 || currentActivePlayer.id === myPlayerId} onCursorColorUpdate={colorUpdate}></ImgView>
+        <ImgView gameState={gameState} onUpdate={onGameStateUpdated} myPlayerId={myPlayerId} activePlayer={currentActivePlayer}></ImgView>
       </Modal>
 
       <Modal isOpen={showColorsModal} onClose={() => setShowColorsModal(false)} type="image">
