@@ -9,12 +9,18 @@ export default class ImgView extends React.Component {
     imgHeight = 0;
     dragging = false;
     playerPickLocation = new THREE.Group();
+    currentImgIndex = 0;
 
     constructor(props) {
         super(props);
     }
 
     loadImage() {
+        if (this.props.gameState.imgIndex !== this.currentImgIndex) {
+            this.currentImgIndex = this.props.gameState.imgIndex;
+        } else {
+            return;
+        }
         const imgLayer = this.scene.children.filter(s => s.name === "img_layer")[0];
         this.scene.remove(imgLayer);
         const texture = new THREE.TextureLoader();
