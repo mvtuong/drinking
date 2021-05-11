@@ -15,8 +15,11 @@ export default class ImgView extends React.Component {
     }
 
     loadImage() {
+        const imgLayer = this.scene.children.filter(s => s.name === "img_layer")[0];
+        this.scene.remove(imgLayer);
         const texture = new THREE.TextureLoader();
-        texture.load(this.props.gameState.imgUrl, (texture) => {
+        const url = `/images/${this.props.gameState.imgIndex}.jpg`;
+        texture.load(url, (texture) => {
             this.imgWidth = texture.image.width;
             this.imgHeight = texture.image.height;
             const imgAspect = this.imgHeight / this.imgWidth;
@@ -166,6 +169,7 @@ export default class ImgView extends React.Component {
     }
 
     componentWillReceiveProps(nextProps) {
+        this.loadImage();
         nextProps.gameState.players.forEach((player) => {
             if (player.id !== this.props.myPlayerId && player.location) {
                 if (this.playerPickLocation.children.map(c => c.name).indexOf(player.iconNumber) < 0) {
