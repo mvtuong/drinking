@@ -2373,10 +2373,10 @@ three-orbitcontrols@^2.110.3:
   resolved "https://registry.yarnpkg.com/three-orbitcontrols/-/three-orbitcontrols-2.110.3.tgz#ca9c91d5ec2f4731a1140acf2ff0281e15988edf"
   integrity sha512-BNNbksJwbN3/MmT0X/gjz5ZCchm7bjk26SUdtJYRxfEYjDfkb/0PeUTHE/KuyJ5vb/owK3mojyy3vcqDx99sRA==
 
-three-svg-loader@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/three-svg-loader/-/three-svg-loader-0.3.1.tgz#1480cd703a90dd7d1e163db72ac46550c91e131c"
-  integrity sha512-GIWk/dYhubiXiamOeM0xAfrCTnHy9htgFrftEQhHErsacjVtXxO1vO0jUIC+vDZ7l03e880pBZFLfVImxjolpQ==
+three-spritetext@^1.6.2:
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/three-spritetext/-/three-spritetext-1.6.2.tgz#824e96db2ffe2148d26a7002d7b63ec11d19d0cf"
+  integrity sha512-VALj40t81Z6x/fDnY/tts8QU+mBl77bxoynBbcn/DW4oxfzZSwjaOfkQOe0jYpLoK2vtP0bAULvGgwIYnsN6oQ==
 
 three@^0.127.0:
   version "0.127.0"

@@ -2,6 +2,7 @@
 import React from "react";
 import * as THREE from "three";
 import OrbitControls from "three-orbitcontrols";
+import SpriteText from 'three-spritetext';
 
 export default class ImgView extends React.Component {
 
@@ -148,17 +149,28 @@ export default class ImgView extends React.Component {
         const url = `/legos/${player.iconNumber}.svg`;
         const texture = new THREE.TextureLoader();
         texture.load(url, (texture) => {
+            const playerGroup = new THREE.Group();
+            const textSprite = new SpriteText(player.name, 25);
+            textSprite.position.y = 70;
+            textSprite.color = 'black';
+            textSprite.backgroundColor = 'white';
+            textSprite.borderColor = 'lightgrey';
+            textSprite.borderWidth = 0.5;
+            textSprite.borderRadius = 3;
+            textSprite.padding = [6, 2];
+            playerGroup.add(textSprite);
             const geometry = new THREE.PlaneGeometry(100, 100);
             const material = new THREE.MeshBasicMaterial({ map: texture });
             const playerMesh = new THREE.Mesh(geometry, material);
-            playerMesh.name = player.iconNumber;
+            playerGroup.add(playerMesh);
+            playerGroup.name = player.iconNumber;
             const coords = player.location;
-            playerMesh.position.set(coords[0], coords[1], 10);
+            playerGroup.position.set(coords[0], coords[1], 10);
             if (player.id === this.props.gameState.luckyPlayerId && 
                 this.props.myPlayerId !== this.props.gameState.luckyPlayerId) {
-                playerMesh.visible = false;
+                    playerGroup.visible = false;
             }
-            this.playerPickLocation.add(playerMesh);
+            this.playerPickLocation.add(playerGroup);
         });
     }
 
@@ -184,7 +196,7 @@ export default class ImgView extends React.Component {
         }
     }
 
-    onPointerMove(event) {
+    onPointerMove() {
         if (this.pointerDown) {
             this.dragging = true;
         }
