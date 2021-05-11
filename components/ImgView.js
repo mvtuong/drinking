@@ -150,16 +150,18 @@ export default class ImgView extends React.Component {
         const texture = new THREE.TextureLoader();
         texture.load(url, (texture) => {
             const playerGroup = new THREE.Group();
+            const circleGeom = new THREE.CircleGeometry( 55, 32 );
+            const circleMat = new THREE.MeshBasicMaterial( { color: 'black' } );
+            const circle = new THREE.Mesh( circleGeom, circleMat );
+            playerGroup.add(circle);
             const textSprite = new SpriteText(player.name, 25);
-            textSprite.position.y = 70;
-            textSprite.color = 'black';
-            textSprite.backgroundColor = 'white';
-            textSprite.borderColor = 'lightgrey';
-            textSprite.borderWidth = 0.5;
+            textSprite.position.y = -50;
+            textSprite.color = 'white';
+            textSprite.backgroundColor = 'black';
             textSprite.borderRadius = 3;
             textSprite.padding = [6, 2];
             playerGroup.add(textSprite);
-            const geometry = new THREE.PlaneGeometry(100, 100);
+            const geometry = new THREE.PlaneGeometry(70, 70);
             const material = new THREE.MeshBasicMaterial({ map: texture });
             const playerMesh = new THREE.Mesh(geometry, material);
             playerGroup.add(playerMesh);
