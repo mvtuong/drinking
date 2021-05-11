@@ -9,7 +9,6 @@ export default class ImgView extends React.Component {
     imgHeight = 0;
     dragging = false;
     playerPickLocation = new THREE.Group();
-    winLocation = new THREE.Group();
     currentImgIndex = 0;
 
     constructor(props) {
