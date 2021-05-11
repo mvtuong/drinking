@@ -66,8 +66,6 @@ export default function Game() {
   const [currentActiveIndex, setCurrentActiveIndex] = useState(-1);
   const [myPlayerId, setMyPlayerId] = useState();
 
-  const winTolerance = 50;
-
   // Subscribe to the channel id from the url
   const [channel, ably] = useChannel(id, (message) => {
     setGameState(message.data);
@@ -105,6 +103,7 @@ export default function Game() {
       iconNumber: randomNumber,
       id: myPlayerId,
       role: 'player',
+      location: [0,0]
     };
 
     const newState = {
@@ -143,8 +142,6 @@ export default function Game() {
       ...gameState,
       imgIndex: randomImage,
       destinationIndex: destination,
-      winPlayerName: undefined,
-      winLocation: undefined,
       luckyPlayerId: (gameState.players[destination % totalPlayers] || {}).id,
       selectedPlayerIds: [],
       player: players,
@@ -211,6 +208,10 @@ export default function Game() {
     const random = getRandomInt(0, numbers.length - 1);
     setRandomNumber(numbers[random]);
   };
+
+  const onGameStateUpdated = () => {
+    syncGameState(gameState);
+  }
 
   // Pre-set the random number for the next player icon
   useEffect(() => {
@@ -388,51 +389,16 @@ export default function Game() {
   };
 
   const onImgPointerUp = (location) => {
-    // currentActivePlayer is the lucky one only after the animation
-    if (gameState.luckyPlayerId === myPlayerId) {
-      const newState = {
-        ...gameState,
-        winLocation: location,
-      };
-      updateGameState(newState);
-    } else {
-      if (gameState.winLocation) {
-        const winLocation = gameState.winLocation;
-        const a = winLocation[0] - location[0];
-        const b = winLocation[1] - location[1];
-        var distance = Math.hypot(a, b);
-        if (distance <= winTolerance) {
-          const newState = {
-            ...gameState,
-            winPlayerName: playerName,
-          };
-          updateGameState(newState);
-        } else {
-          gameState.players.filter(p => p.id === myPlayerId)[0].location = location;
-          updateGameState({ ...gameState });
-        }
-      }
-    }
+    console.log(location);
   }
 
-  const colorUpdate = (rgb) => {
-    if (currentActivePlayer.id === myPlayerId) {
-      const newState = {
-        ...gameState,
-        pickedColor: `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`,
-      };
-      setGameState(newState);
-    }
-  }
+
 
   const currentActivePlayer = gameState.players[currentActiveIndex % gameState.players.length] || {};
   const isDisabled = gameState.players.length === 0;
   const controller = gameState.players.find(player => player.role === 'controller');
   const isController = myPlayerId === (controller || {}).id;
   const myPlayerAdded = gameState.players.some(player => player.id === myPlayerId);
-  const locations = gameState.players
-    .filter(p => p.id !== currentActivePlayer.id && p.id !== myPlayerId)
-    .map(p => p.location);
 
   return (
     <div className={styles.container}>

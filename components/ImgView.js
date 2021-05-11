@@ -8,6 +8,7 @@ export default class ImgView extends React.Component {
     imgWidth = 0;
     imgHeight = 0;
     dragging = false;
+    playerPickLocation = new THREE.Group();
 
     constructor(props) {
         super(props);
@@ -15,7 +16,7 @@ export default class ImgView extends React.Component {
 
     loadImage() {
         const texture = new THREE.TextureLoader();
-        texture.load(this.props.imgUrl, (texture) => {
+        texture.load(this.props.gameState.imgUrl, (texture) => {
             this.imgWidth = texture.image.width;
             this.imgHeight = texture.image.height;
             const imgAspect = this.imgHeight / this.imgWidth;
@@ -24,7 +25,6 @@ export default class ImgView extends React.Component {
             this.imgMesh = new THREE.Mesh(geometry, material);
             this.imgMesh.name = "img_layer";
             this.scene.add(this.imgMesh);
-
             const canvas = document.createElement("canvas");
             this.canvasContext = canvas.getContext("2d");
             this.canvasContext.canvas.width = this.imgWidth;
@@ -66,54 +66,19 @@ export default class ImgView extends React.Component {
         this.orbitControls.minPolarAngle = Math.PI / 2;
         this.orbitControls.screenSpacePanning = true;
         this.container.appendChild(this.renderer.domElement);
-        if (this.props.canSelect) {
-            this.container.addEventListener('pointerdown', () => { this.pointerDown = true; })
+        if (this.props.gameState.selectedPlayerIds.indexOf(this.props.myPlayerId) > -1 || 
+        this.props.gameState.luckyPlayerId === this.props.myPlayerId) {
+            this.container.addEventListener('pointerdown', () => { this.pointerDown = true; });
             this.container.addEventListener('pointermove', this.onPointerMove.bind(this), false);
             this.container.addEventListener('pointerup', this.onPointerUp.bind(this), false);
         }
-        this.userPickLocation = new THREE.Group();
-        this.scene.add(this.userPickLocation);
         this.playerPickLocation = new THREE.Group();
         this.scene.add(this.playerPickLocation);
-        this.addPlayersPickLocation(this.props.locations);
+        this.props.gameState.players.forEach(player => {
+            this.addPlayerLocation(player);
+        })
         this.loadImage();
         this.animate();
-    }
-
-    updateUserLocation(userLocation) {
-        const markerSize = this.imgWidth / 100;
-        if (userLocation.user === "gert") {
-            return;
-        }
-        let extUser = false;
-        for (let i = 0; i < this.scene.children.length; i++) {
-            const child = this.scene.children[i];
-            if (child.name === userLocation.user) {
-                child.position.set(userLocation.x, userLocation.y, 0);
-                extUser = true;
-                break;
-            }
-        }
-        if (!extUser) {
-            const group = new THREE.Group();
-            group.name = userLocation.user;
-            group.position.set(userLocation.x, userLocation.y, 10);
-            const material = new THREE.MeshBasicMaterial({ color: "white" });
-            const geometry = new THREE.SphereGeometry(markerSize, 50, 50);
-            const mesh = new THREE.Mesh(geometry, material);
-            group.add(mesh);
-            const loader = new THREE.FontLoader();
-            loader.load('optimer_bold.typeface.json', (font) => {
-                const geometry = new THREE.TextGeometry(userLocation.user, {
-                    font: font,
-                    size: 20,
-                    height: 1
-                });
-                const textMest = new THREE.Mesh(geometry, material);
-                group.add(textMest);
-            });
-            this.scene.add(group);
-        }
     }
 
     onPointerUp(event) {
@@ -125,35 +90,10 @@ export default class ImgView extends React.Component {
         const mouse = this.getMouseFromEvent(event);
         const coords = this.getIntersectCoordinates(mouse);
         if (coords) {
-            this.addUserPickLocation(coords);
-            if (this.props.onPointerUp) {
-                this.props.onPointerUp(coords);
-            }
-        }
-    }
-
-    onPointerMove(event) {
-        if (this.pointerDown) {
-            this.dragging = true;
-        }
-        const mouse = this.getMouseFromEvent(event);
-        if (!this.oldMouse) {
-            this.oldMouse = mouse;
-        }
-        const mouseMoveDist = Math.abs(mouse.distanceTo(this.oldMouse));
-        if (mouseMoveDist <= 0) {
-            return;
-        }
-        const coords = this.getIntersectCoordinates(mouse);
-        if (coords) {
-            const userLocation = {
-                user: "gert",
-                x: coords[0],
-                y: coords[1]
-            };
-            if (this.props.onPointerMove) {
-                this.props.onPointerMove(userLocation);
-            }
+            const myPlayer = this.props.gameState.players.filter(p => p.id === this.props.myPlayerId)[0];
+            myPlayer.location = coords;
+            this.updatePlayerLocation(myPlayer);
+            this.props.onUpdate(this.props.gameState);
         }
     }
 
@@ -185,42 +125,67 @@ export default class ImgView extends React.Component {
         const r = texData.data[offset + 0];
         const g = texData.data[offset + 1];
         const b = texData.data[offset + 2];
-        this.rgb = [r, g, b];
+        const rgb = [r, g, b];
+        if (this.props.gameState.luckyPlayerId && this.props.gameState.luckyPlayerId === this.props.myPlayerId) {
+            this.props.gameState.pickedColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+        }
     }
 
     emod(n, m) {
         return ((n % m) + m) % m;
     }
 
-    addUserPickLocation(coords) {
-        this.userPickLocation.clear();
-        this.userPickLocation.position.set(coords[0], coords[1], 10);
-        const geometry = new THREE.RingGeometry(30, 40, 32);
-        const material = new THREE.MeshBasicMaterial({ color: "white" });
-        const circle = new THREE.Mesh(geometry, material);
-        this.userPickLocation.add(circle);
-        if (this.props.onCursorColorUpdate && this.rgb) {
-            this.props.onCursorColorUpdate(this.rgb);
+    addPlayerLocation(player) {
+        const url = `/legos/${player.iconNumber}.svg`;
+        const texture = new THREE.TextureLoader();
+        texture.load(url, (texture) => {
+            const geometry = new THREE.PlaneGeometry(100, 100);
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            const playerMesh = new THREE.Mesh(geometry, material);
+            playerMesh.name = player.iconNumber;
+            const coords = player.location;
+            playerMesh.position.set(coords[0], coords[1], 10);
+            if (player.id === this.props.gameState.luckyPlayerId && 
+                this.props.myPlayerId !== this.props.gameState.luckyPlayerId) {
+                playerMesh.visible = false;
+            }
+            this.playerPickLocation.add(playerMesh);
+        });
+        if (this.allPlayersHaveSelectedLocations()) {
+            this.playerPickLocation.children.visible = true;
         }
     }
 
-    addPlayersPickLocation(coordPairs) {
-        this.playerPickLocation.clear();
-        coordPairs.forEach((coords) => {
-            if (coords) {
-                const geometry = new THREE.RingGeometry(30, 40, 32);
-                const material = new THREE.MeshBasicMaterial({ color: "blue" });
-                const circle = new THREE.Mesh(geometry, material);
-                circle.position.set(coords[0], coords[1], 10);
-                this.playerPickLocation.add(circle);
+    updatePlayerLocation(player) {
+        const playerLocation = this.playerPickLocation.children.filter(c => c.name === player.iconNumber)[0];
+        const coords = player.location;
+        playerLocation.position.set(coords[0], coords[1], 10);
+        if (this.allPlayersHaveSelectedLocations()) {
+            this.playerPickLocation.children.forEach(p => p.visible = true);
+        }
+    }
+
+    componentWillReceiveProps(nextProps) {
+        nextProps.gameState.players.forEach((player) => {
+            if (player.id !== this.props.myPlayerId && player.location) {
+                if (this.playerPickLocation.children.map(c => c.name).indexOf(player.iconNumber) < 0) {
+                    this.addPlayerLocation(player);
+                } else {
+                    this.updatePlayerLocation(player);
+                }
             }
         });
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.addPlayersPickLocation(nextProps.locations);
+    onPointerMove(event) {
+        if (this.pointerDown) {
+            this.dragging = true;
+        }
     }
 
+    allPlayersHaveSelectedLocations() {
+        return this.playerPickLocation.children.length - 1 === this.props.gameState.selectedPlayerIds.length;
+    }
 
     render() {
         return (
