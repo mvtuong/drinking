@@ -61,7 +61,6 @@ export default class ImgView extends React.Component {
 
     componentDidMount() {
         this.renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
-        this.renderer.setClearColor(0xffffff, 1);
         this.scene = new THREE.Scene();
         this.raycaster = new THREE.Raycaster();
         window.addEventListener("resize", this.onResize.bind(this));
@@ -196,6 +195,7 @@ export default class ImgView extends React.Component {
         if (this.props.gameState.showWinLocation) {
             this.playerPickLocation.children.forEach(p => p.visible = true);
         }
+        this.scene.background = new THREE.Color(this.props.gameState.pickedColor);
     }
 
     onPointerMove() {
