@@ -1,7 +1,7 @@
 import { useState } from "react";
 import styles from '../styles/Player.module.css';
 
-const Player = ({ name, iconNumber, isActive, isStopped, isSelected, onRemove, onClick }) => {
+const Player = ({ name, iconNumber, isActive, isStopped, isSelected, isSpinning, onRemove, onClick }) => {
   const [opened, setOpened] = useState(true);
 
   const onUserClick = () => {
@@ -14,7 +14,7 @@ const Player = ({ name, iconNumber, isActive, isStopped, isSelected, onRemove, o
 
   return (
     <div
-      className={`${styles.player} ${isActive ? styles.active : ''} ${isStopped ? styles.stopped : ''} ${isSelected ? styles.selected : ''} ${onRemove ? '' : styles.spin}`}
+      className={`${styles.player} ${isActive ? styles.active : ''} ${isStopped ? styles.stopped : ''} ${isSelected ? styles.selected : ''} ${isSpinning ? styles.spin : ''}`}
       role="presentation"
       onClick={onUserClick}
     >

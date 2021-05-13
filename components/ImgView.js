@@ -91,6 +91,10 @@ export default class ImgView extends React.Component {
     }
 
     onPointerUp(event) {
+        if (this.props.gameState.showWinLocation) {
+            return;
+        }
+
         this.pointerDown = false;
         if (this.dragging) {
             this.dragging = false;

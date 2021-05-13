@@ -49,10 +49,7 @@ export default function Game() {
   const [error, setError] = useState('');
 
   const [randomNumber, setRandomNumber] = useState(1);
-  // const [currentImage, setCurrentImage] = useState(1);
   const [sound, setSound] = useState('triangle');
-
-  const color = useRef();
 
   // global state
   const [gameState, setGameState] = useState({
@@ -146,7 +143,8 @@ export default function Game() {
       luckyPlayerId: (gameState.players[destination % totalPlayers] || {}).id,
       selectedPlayerIds: [],
       player: players,
-      showWinLocation: false
+      showWinLocation: false,
+      pickedColor: 'rgb(255,255,255)',
     };
 
     updateGameState(newState);
@@ -327,13 +325,6 @@ export default function Game() {
     syncGameState(gameState);
   }
 
-  // const onImageModalClick = (event) => {
-  //   const radius = 25;
-  //   const x = event.clientX - radius;
-  //   const y = event.clientY - radius;
-  //   setStamps([...stamps, { x, y }]);
-  // };
-
   const onAddPlayerModalShow = () => {
     setShowPlayerModal(true);
     setPlayerName('');
@@ -398,12 +389,6 @@ export default function Game() {
     }
   };
 
-  const onImgPointerUp = (location) => {
-    console.log(location);
-  }
-
-
-
   const currentActivePlayer = gameState.players[currentActiveIndex % gameState.players.length] || {};
   const isDisabled = gameState.players.length === 0;
   const controller = gameState.players.find(player => player.role === 'controller');
@@ -428,6 +413,7 @@ export default function Game() {
             name={currentActivePlayer.name}
             iconNumber={currentActivePlayer.iconNumber}
             isActive={true}
+            isSpinning={true}
             isStopped={isStopping}
           />
         </div>
@@ -438,7 +424,7 @@ export default function Game() {
               key={`${player.name}-${player.iconNumber}`}
               name={player.name}
               iconNumber={player.iconNumber}
-              onRemove={isController || myPlayerId === player.id ? () => onPlayerRemove(player.id) : undefined}
+              onRemove={(isController || myPlayerId === player.id) ? () => onPlayerRemove(player.id) : undefined}
               isActive={idx === currentActiveIndex % gameState.players.length}
               isStopped={isStopping}
             />
@@ -486,8 +472,8 @@ export default function Game() {
         </div>
       </Modal>
 
-      <Modal isOpen={gameState.showImageModal} onClose={onImageModalClose} type="image">
-        {myPlayerId === gameState.luckyPlayerId &&
+      <Modal isOpen={gameState.showImageModal} type="image">
+        {myPlayerId === gameState.luckyPlayerId && !gameState.showWinLocation &&
           <>
             <img className={`${styles.arrow} ${styles.leftArrow}`} src="/left-arrow.svg" role="presentation" onClick={() => onArrowClick('left')} />
             <img className={`${styles.arrow} ${styles.rightArrow}`} src="/right-arrow.svg" role="presentation" onClick={() => onArrowClick('right')} />
@@ -495,9 +481,12 @@ export default function Game() {
         }
         <div className={styles.pickedColor} style={{ backgroundColor: gameState.pickedColor }}></div>
         <ImgView gameState={gameState} onUpdate={onGameStateUpdated} myPlayerId={myPlayerId} activePlayer={currentActivePlayer}></ImgView>
-        {isController && <div className={styles.showWinLocation}>
-          <button onClick={handleShowWinLocation}>Show win location</button>
-        </div>}
+        {isController && gameState.showWinLocation &&
+          <button className={styles.showWinLocation} onClick={onImageModalClose}>Start a new round</button>
+        }
+        {isController && !gameState.showWinLocation &&
+          <button className={styles.showWinLocation} onClick={handleShowWinLocation}>Show win location</button>
+        }
       </Modal>
 
       <Modal isOpen={showColorsModal} onClose={() => setShowColorsModal(false)} type="image">

@@ -232,6 +232,7 @@ export default function GameClassic() {
             name={currentActivePlayer.name}
             iconNumber={currentActivePlayer.iconNumber}
             isActive={true}
+            isSpinning={true}
             isStopped={currentActive === dest.current}
           />
         </div>
