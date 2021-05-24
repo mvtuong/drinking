@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useChannel } from "../../components/AblyReactEffect";
 import ImgView from '../../components/ImgView';
 
+// TODO: update help text
+
 const TOTAL_IMAGES = 19;
 const ICON_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
 
@@ -58,6 +60,7 @@ export default function Game() {
     imgIndex: 1,
     selectedPlayerIds: [],
     showImageModal: false,
+    showWinLocation: false,
   });
   // local state
   const [currentActiveIndex, setCurrentActiveIndex] = useState(-1);
@@ -134,7 +137,7 @@ export default function Game() {
   const onStartBtnClick = () => {
     const destination = getRandomInt(gameState.players.length * 4, gameState.players.length * 5);
     const randomImage = getRandomInt(1, TOTAL_IMAGES);
-    const players = gameState.players.forEach(p => p.location = []);
+    const players = gameState.players.map(player => ({ ...player, location: [] }));
     const totalPlayers = gameState.players.length;
     const newState = {
       ...gameState,
@@ -142,7 +145,7 @@ export default function Game() {
       destinationIndex: destination,
       luckyPlayerId: (gameState.players[destination % totalPlayers] || {}).id,
       selectedPlayerIds: [],
-      player: players,
+      players,
       showWinLocation: false,
       pickedColor: 'rgb(255,255,255)',
     };
@@ -209,7 +212,8 @@ export default function Game() {
     setRandomNumber(numbers[random]);
   };
 
-  const onGameStateUpdated = () => {
+  const onUserLocationPick = () => {
+    playSound(sound, 440.0);
     syncGameState(gameState);
   }
 
@@ -320,11 +324,6 @@ export default function Game() {
     updateGameState(newState);
   };
 
-  const onSyncBtnClick = () => {
-    console.log("Force sync state");
-    syncGameState(gameState);
-  }
-
   const onAddPlayerModalShow = () => {
     setShowPlayerModal(true);
     setPlayerName('');
@@ -394,6 +393,7 @@ export default function Game() {
   const controller = gameState.players.find(player => player.role === 'controller');
   const isController = myPlayerId === (controller || {}).id;
   const myPlayerAdded = gameState.players.some(player => player.id === myPlayerId);
+  const selectedPlayers = gameState.players.filter(player => gameState.selectedPlayerIds.includes(player.id));
 
   return (
     <div className={styles.container}>
@@ -446,7 +446,9 @@ export default function Game() {
       </main>
 
       <img className={styles.homeLink} src="/home.svg" role="presentation" onClick={() => window.open('/', '_self')} />
-      <img className={styles.imageGenerate} src="/image.svg" role="presentation" onClick={() => onImageBtnClick()} />
+      {isController &&
+        <img className={styles.imageGenerate} src="/image.svg" role="presentation" onClick={() => onImageBtnClick()} />
+      }
       <label className={styles.controller}>
         <input
           name="isController"
@@ -456,9 +458,6 @@ export default function Game() {
         />
         Controller
       </label>
-      {isController &&
-        <img className={styles.forceSync} src="/sync.svg" role="presentation" onClick={() => onSyncBtnClick()} />
-      }
       <img className={styles.helpCenter} src="/question.svg" role="presentation" onClick={() => setShowHelpModal(true)} />
       <img className={styles.colorTable} src="/chromatic.svg" role="presentation" onClick={() => setShowColorsModal(true)} />
 
@@ -480,7 +479,18 @@ export default function Game() {
           </>
         }
         <div className={styles.pickedColor} style={{ backgroundColor: gameState.pickedColor }}></div>
-        <ImgView gameState={gameState} onUpdate={onGameStateUpdated} myPlayerId={myPlayerId} activePlayer={currentActivePlayer}></ImgView>
+        <div className={styles.selectedPlayers}>
+          {selectedPlayers.map(player =>
+            <Player
+              key={`selected-player-${player.id}`}
+              name={player.name}
+              iconNumber={player.iconNumber}
+              onClick={() => undefined}
+              isSelected={player.location && player.location.length > 0}
+            />
+          )}
+        </div>
+        <ImgView gameState={gameState} onUserLocationPick={onUserLocationPick} myPlayerId={myPlayerId} activePlayer={currentActivePlayer}></ImgView>
         {isController && gameState.showWinLocation &&
           <button className={styles.showWinLocation} onClick={onImageModalClose}>Start a new round</button>
         }
@@ -509,6 +519,7 @@ export default function Game() {
         <hr />
         <br />
         <p><strong>Settings:</strong> You can add/remove/hide/reveal a player. You can also shuffle/clear the list of players. Game sound can be adjusted in the page footer.</p>
+        <p>(At the moment the game's sounds work best on Google Chrome)</p>
       </Modal>
 
       <Modal isOpen={showPlayersModal} type="players">

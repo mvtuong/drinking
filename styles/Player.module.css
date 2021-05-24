@@ -4,6 +4,8 @@
   position: relative;
   text-align: center;
   width: 200px;
+  max-height: 100%;
+  max-width: 100%;
 }
 
 .player.active {
@@ -14,8 +16,17 @@
     0px 0px 0px 10px rgba(255, 165, 0, 0.1);
 }
 
-.player.selected {
-  background-color: red !important;
+.player.selected:after {
+  content: " ";
+  background: url("/check-mark.svg") center/contain no-repeat;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 60%;
+  height: 60%;
+  margin: auto;
 }
 
 @keyframes blink {
@@ -37,6 +48,8 @@
 .playerImg {
   width: 80px;
   height: 80px;
+  max-height: 100%;
+  max-width: 100%;
 }
 
 .resetBtn {

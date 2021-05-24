@@ -106,7 +106,7 @@ export default class ImgView extends React.Component {
             const myPlayer = this.props.gameState.players.filter(p => p.id === this.props.myPlayerId)[0];
             myPlayer.location = coords;
             this.updatePlayerLocation(myPlayer);
-            this.props.onUpdate(this.props.gameState);
+            this.props.onUserLocationPick(this.props.gameState);
         }
     }
 
