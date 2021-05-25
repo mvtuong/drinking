@@ -485,6 +485,7 @@ export default function Game() {
               key={`selected-player-${player.id}`}
               name={player.name}
               iconNumber={player.iconNumber}
+              isPreview={true}
               onClick={() => undefined}
               isSelected={player.location && player.location.length > 0}
             />
