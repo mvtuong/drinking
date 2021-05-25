@@ -511,11 +511,14 @@ export default function Game() {
       <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} type="help">
         <h1>Mind reader</h1>
         <h3>How to play</h3>
-        <p><strong>Step 1:</strong> The game controller shares screen and clicks on the Start button to select the lucky one.</p>
-        <p><strong>Step 2:</strong> The lucky one decides who may drink this round by selecting 2 players who haven't been selected the previous round.</p>
-        <p><strong>Step 3:</strong> The game controller opens a random image. The lucky one picks an object and lets everyone know the color of that object.</p>
-        <p><strong>Step 4:</strong> The 2 selected players have to guess which object the lucky one has picked, but they have to choose different objects.</p>
-        <p><strong>Step 5:</strong> The one(s) who guessed incorrectly must drink -:).</p>
+        <p><strong>Step 1:</strong> After the game has been created, people can join by visiting the generated link from the URL bar and add their own player.</p>
+        <p><strong>Step 2:</strong> This game requires a controller. The first one who clicks on the checkbox below the home button will be the controller.</p>
+        <p><strong>Step 3:</strong> The game controller starts the game by clicking on the Start button to select the lucky one.</p>
+        <p><strong>Step 4:</strong> The lucky one decides who may drink this round by selecting some players who haven't been selected the previous round.</p>
+        <p><strong>Step 5:</strong> A random image opens automatically. The lucky one picks an object and the object's color is displayed to everyone.</p>
+        <p><strong>Step 6:</strong> The selected players have to guess which object the lucky one has picked by clicking on the image, but they have to choose different ones.</p>
+        <p><strong>Step 7:</strong> After everyone finishes guessing, the game controller reveals the lucky one's answer. The one(s) who guessed incorrectly must drink -:).</p>
+        <p>Feel free to invent your own rules. Enjoy the game!</p>
         <br />
         <hr />
         <br />
