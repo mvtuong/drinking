@@ -1,17 +1,36 @@
-.user {
+.player {
   margin-right: 20px;
   padding: 10px;
   position: relative;
   text-align: center;
   width: 200px;
+  max-height: 100%;
+  max-width: 100%;
 }
 
-.user.active {
+.player.preview {
+  width: auto;
+}
+
+.player.active {
   box-shadow: 0px 0px 0px 2px rgba(255, 165, 0, 1),
     0px 0px 0px 4px rgba(255, 165, 0, 0.6),
     0px 0px 0px 6px rgba(255, 165, 0, 0.4),
     0px 0px 0px 8px rgba(255, 165, 0, 0.2),
     0px 0px 0px 10px rgba(255, 165, 0, 0.1);
+}
+
+.player.selected:after {
+  content: " ";
+  background: url("/check-mark.svg") center/contain no-repeat;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 60%;
+  height: 60%;
+  margin: auto;
 }
 
 @keyframes blink {
@@ -25,14 +44,23 @@
   }
 }
 
-.user.active.stopped {
+.player.active.stopped {
   background-color: cornflowerblue;
   animation: blink 500ms step-start 500ms 3;
 }
 
-.userImg {
+.playerImg {
   width: 80px;
   height: 80px;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.resetBtn {
+  margin: 10px auto;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
 }
 
 .closeBtn {
@@ -50,20 +78,20 @@
   opacity: 1;
 }
 
-.user:hover {
+.player:hover {
   background-color: #eee;
 }
 
-.user:hover .closeBtn {
+.player:hover .closeBtn {
   display: inline;
 }
 
 @media only screen and (max-width : 640px) {
-  .user.addUserBtn {
+  .player.addUserBtn {
     order: 1;
   }
 
-  .user {
+  .player {
     order: 2;
   }
 
@@ -71,11 +99,11 @@
     display: inline;
   }
 
-  .user:not(.spin).active {
+  .player:not(.spin).active {
     box-shadow: none;
   }
 
-  .user:not(.spin).active.stopped {
+  .player:not(.spin).active.stopped {
     background-color: transparent;
     animation: none;
   }
